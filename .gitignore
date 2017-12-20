@@ -1,0 +1,18 @@
+# Stereolabs plugins
+Plugins/Stereolabs/Binaries/*
+Plugins/Stereolabs/Intermediate/*
+Plugins/Stereolabs/.git/*
+Plugins/Stereolabs/.gitignore
+
+#local folders
+*.vs
+*.db
+*.vc.db
+*.vc.vc.opendb
+*.sln
+Binaries/*
+Build/*
+Debug/*
+DerivedDataCache/*
+Intermediate/*
+Saved/*
