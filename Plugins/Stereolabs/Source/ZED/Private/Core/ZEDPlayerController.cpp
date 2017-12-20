@@ -29,6 +29,9 @@ static TAutoConsoleVariable<int32> CVarZEDNoise(
 	ECVF_RenderThreadSafe
 );
 
+// Show loading text while opening camera/enabling tracking
+#define SHOW_LOADING_TEXT 0
+
 AZEDPlayerController::AZEDPlayerController()
 	:
 	bTickZedCamera(false),
@@ -672,7 +675,9 @@ void AZEDPlayerController::FadeOutToGame()
 
 void AZEDPlayerController::UpdateHUDOpeningZed_Implementation()
 {
+#if SHOW_LOADING_TEXT
 	ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Searching for ZED camera"));
+#endif
 	ZedPawn->ZedLoadingWidget->SetVisibility(true);
 
 	SetWidgetInFrontOfCamera(ZedPawn->ZedLoadingWidget);
@@ -697,20 +702,25 @@ void AZEDPlayerController::UpdateHUDCheckOpeningZed_Implementation()
 		ZedPawn->ZedErrorWidget->SetVisibility(false);
 
 		ZedPawn->ZedLoadingWidget->SetVisibility(true);
+#if SHOW_LOADING_TEXT
 		ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Opening camera"));
+#endif
 	}
 }
 
 void AZEDPlayerController::UpdateHUDZedOpened_Implementation()
 {
+#if SHOW_LOADING_TEXT
 	ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Camera opened"));
-
+#endif
 	ZedPawn->ZedLoadingWidget->FadeOut();
 }
 
 void AZEDPlayerController::UpdateHUDEnablingTracking_Implementation()
 {
+#if SHOW_LOADING_TEXT
 	ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Enabling tracking"));
+#endif
 }
 
 void AZEDPlayerController::UpdateHUDTrackingEnabled_Implementation(bool bSuccess, ESlErrorCode ErrorCode)
@@ -724,7 +734,9 @@ void AZEDPlayerController::UpdateHUDTrackingEnabled_Implementation(bool bSuccess
 	}
 	else
 	{
+#if SHOW_LOADING_TEXT
 		ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Tracking enabled"));
+#endif
 		ZedPawn->ZedLoadingWidget->FadeOut();
 	}
 }
