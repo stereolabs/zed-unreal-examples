@@ -313,7 +313,7 @@ enum class ESlErrorCode : uint8
 	EC_IncompatibleSDKVersion      UMETA(DisplayName = "Incompatible SDK version"),
 	EC_InvalidAreaFile			   UMETA(DisplayName = "Invalid area file"),
 	EC_IncompatibleAreaFile		   UMETA(DisplayName = "Incompatible area file"),
-	EC_USBCCableInverted		   UMETA(DisplayName = "USB-C cable inverted"),
+	EC_CameraDetectionIssue		   UMETA(DisplayName = "Camera detection issue"),
 	EC_CameraAlreadyInUse		   UMETA(DisplayName = "Camera used by another process"),
 	EC_DepthModeNotAvailable	   UMETA(DisplayName = "Depth mode not available"),
 	// ERROR_CODE_LAST

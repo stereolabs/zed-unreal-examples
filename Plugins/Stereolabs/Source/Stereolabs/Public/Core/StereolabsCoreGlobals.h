@@ -297,8 +297,8 @@ namespace sl
 					return ESlErrorCode::EC_InvalidAreaFile;
 				case sl::ERROR_CODE::ERROR_CODE_INCOMPATIBLE_AREA_FILE:
 					return ESlErrorCode::EC_IncompatibleAreaFile;
-				case sl::ERROR_CODE::ERROR_CODE_USB_TYPEC_CABLE_INVERTED:
-					return ESlErrorCode::EC_USBCCableInverted;
+				case sl::ERROR_CODE::ERROR_CODE_CAMERA_DETECTION_ISSUE:
+					return ESlErrorCode::EC_CameraDetectionIssue;
 				case sl::ERROR_CODE::ERROR_CODE_CAMERA_ALREADY_IN_USE:
 					return ESlErrorCode::EC_CameraAlreadyInUse;
 				case sl::ERROR_CODE::ERROR_CODE_DEPTH_MODE_NOT_AVAILABLE:
@@ -763,8 +763,8 @@ namespace sl
 					return sl::ERROR_CODE::ERROR_CODE_INVALID_AREA_FILE;
 				case ESlErrorCode::EC_IncompatibleAreaFile:
 					return sl::ERROR_CODE::ERROR_CODE_INCOMPATIBLE_AREA_FILE;
-				case ESlErrorCode::EC_USBCCableInverted:
-					return sl::ERROR_CODE::ERROR_CODE_USB_TYPEC_CABLE_INVERTED;
+				case ESlErrorCode::EC_CameraDetectionIssue:
+					return sl::ERROR_CODE::ERROR_CODE_CAMERA_DETECTION_ISSUE;
 				case ESlErrorCode::EC_CameraAlreadyInUse:
 					return sl::ERROR_CODE::ERROR_CODE_CAMERA_ALREADY_IN_USE;
 				case ESlErrorCode::EC_DepthModeNotAvailable:
