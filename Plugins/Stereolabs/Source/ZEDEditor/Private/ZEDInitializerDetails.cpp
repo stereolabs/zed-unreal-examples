@@ -1,5 +1,5 @@
-#include "StereolabsEditor/Private/StereolabsEditorPrivatePCH.h"
-#include "StereolabsEditor/Public/ZED/ZEDInitializerDetails.h"
+#include "ZEDEditor/Private/ZEDEditorPrivatePCH.h"
+#include "ZEDEditor/Public/ZEDInitializerDetails.h"
 #include "ZED/Public/Core/ZEDInitializer.h"
 
 TSharedRef<IDetailCustomization> FZEDInitializerDetails::MakeInstance()

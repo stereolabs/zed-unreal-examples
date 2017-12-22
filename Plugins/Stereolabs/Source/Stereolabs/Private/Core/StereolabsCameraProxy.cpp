@@ -262,9 +262,10 @@ void USlCameraProxy::Internal_OpenCamera(const FSlInitParameters& InitParameters
 			UE_LOG(LogTemp, Warning, TEXT("Can't set current CUDA context"));
 		}
 #endif
+		bCameraOpened = true;
+
 		OnCameraOpened.Broadcast();
 
-		bCameraOpened = true;
 		bGrabEnabled = true;
 	});
 }
@@ -540,7 +541,7 @@ FSlCameraInformation USlCameraProxy::GetCameraInformation(const FIntPoint& Custo
 
 bool USlCameraProxy::IsCameraOpened()
 {
-	return OpenCameraAsyncTask ? false : Zed.isOpened();
+	return OpenCameraAsyncTask ? false : bCameraOpened && Zed.isOpened();
 }
 
 bool USlCameraProxy::IsCameraConnected()

@@ -1,7 +1,6 @@
 #pragma once
 #include "SpatialMappingPrivatePCH.h"
 #include "SpatialMapping/Public/Core/SpatialMappingCubemapManager.h"
-#include "ZED/Public/Utilities/ZEDFunctionLibrary.h"
 
 ASpatialMappingCubemapManager::ASpatialMappingCubemapManager()
 	:
@@ -125,11 +124,6 @@ bool ASpatialMappingCubemapManager::BuildCubemap(const FName& Name)
 
 void ASpatialMappingCubemapManager::CaptureScene()
 {
-	FRotator Rotation;
-	FVector Location;
-	UZEDFunctionLibrary::GetViewPointOrientationAndLocation(Rotation, Location);
-
-	Camera->SetWorldLocation(Location);
 	Camera->CaptureScene();
 }
 

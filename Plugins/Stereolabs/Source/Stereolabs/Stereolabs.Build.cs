@@ -66,6 +66,7 @@ public class Stereolabs : ModuleRules
             }
             );
 
+        // Paths for low-level directx and opengl access
         string engine_path = Path.GetFullPath(Target.RelativeEnginePath);
         PrivateIncludePaths.AddRange(
           new string[]
@@ -100,6 +101,7 @@ public class Stereolabs : ModuleRules
             string Major = "2";
             string Minor = "3";
 
+            // Find SDK major and minor version and compare
             foreach (var line in File.ReadLines(DefinesHeaderFilePath))
             {
                 if (!string.IsNullOrEmpty(line))
@@ -129,6 +131,7 @@ public class Stereolabs : ModuleRules
                 }
             }
 
+            // Set the paths to the SDK
             string[] LibrariesNames = Directory.GetFiles(Path.Combine(DirPath, "lib"));
 
             PublicIncludePaths.Add(Path.Combine(DirPath, "include"));

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "StereolabsEditorPlugin.h"
+#include "SpatialMappingEditorPlugin.h"
 
 #include "Engine.h"
 #include "CoreUObject.h"

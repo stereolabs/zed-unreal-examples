@@ -1,5 +1,5 @@
-#include "StereolabsEditor/Private/StereolabsEditorPrivatePCH.h"
-#include "StereolabsEditor/Public/SpatialMapping/SpatialMappingManagerDetails.h"
+#include "SpatialMappingEditor/Private/SpatialMappingEditorPrivatePCH.h"
+#include "SpatialMappingEditor/Public/SpatialMappingManagerDetails.h"
 #include "Stereolabs/Public/Core/StereolabsCoreUtilities.h"
 #include "DesktopPlatformModule.h"
 

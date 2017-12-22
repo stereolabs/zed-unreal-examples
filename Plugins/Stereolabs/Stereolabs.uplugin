@@ -62,7 +62,12 @@
 			]
 		},
 		{
-			"Name": "StereolabsEditor",
+			"Name": "SpatialMappingEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "ZEDEditor",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}

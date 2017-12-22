@@ -4,12 +4,6 @@
 
 USlMesh::USlMesh()
 {
-
-}
-
-USlMesh::~USlMesh()
-{
-
 }
 
 void USlMesh::UpdateMeshData()

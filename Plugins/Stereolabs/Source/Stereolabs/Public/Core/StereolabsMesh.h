@@ -13,7 +13,6 @@ class STEREOLABS_API USlMesh : public UObject
 
 public:
 	USlMesh();
-	~USlMesh();
 
 	/*
 	 * Updates the mesh data from underlying mesh.
@@ -78,6 +77,8 @@ public:
 	 *  
 	 * The bSaveTexture parameter in FSlSpatialMappingParameters must be set as true when enabling the spatial mapping to be able to apply the textures.
 	 * The mesh should be filtered before calling this function since filter will erased the textures, the texturing is also significantly slower on non-filtered meshes.
+	 *
+	 * If not called in the render thread you must call MeshData.Texture->UpdateResource()
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Stereolabs")
 	bool ApplyTexture(ESlMeshTextureFormat TextureFormat = ESlMeshTextureFormat::MTF_RGBA, bool bSRGB = false);

@@ -199,6 +199,11 @@ bool AZEDCamera::CanEditChange(const UProperty* InProperty) const
 		return !InitParameters.bUseSVO;
 	}
 
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(FSlTrackingParameters, bEnablePoseSmoothing))
+	{
+		return TrackingParameters.bEnableSpatialMemory;
+	}
+
 	return Super::CanEditChange(InProperty);
 }
 #endif
@@ -298,7 +303,7 @@ void AZEDCamera::Tick(float DeltaTime)
 				TmpTrackingData.ZedPathTransform = TmpTrackingData.ZedPathTransform * TrackingOriginFromHMD.Inverse();
 				
 				sl::mr::trackingData SlTrackingData = sl::unreal::ToSlType(TmpTrackingData);
-				sl::mr::driftCorrectorGetTrackingData(SlTrackingData, SlHMDTransform, SlLatencyTransform, UHeadMountedDisplayFunctionLibrary::HasValidTrackingPosition(), true);
+				sl::mr::driftCorrectorGetTrackingData(SlTrackingData, SlHMDTransform, SlLatencyTransform, bHMDHasTrackers && UHeadMountedDisplayFunctionLibrary::HasValidTrackingPosition(), true);
 
 				TrackingData.ZedWorldTransform = sl::unreal::ToUnrealType(SlTrackingData.zedWorldTransform);
 				TrackingData.OffsetZedWorldTransform = sl::unreal::ToUnrealType(SlTrackingData.offsetZedWorldTransform);
@@ -375,6 +380,7 @@ void AZEDCamera::Tick(float DeltaTime)
 #endif
 		}
 
+		// Depth retrieve toggle
 		if (bCurrentDepthEnabled != RuntimeParameters.bEnableDepth)
 		{
 			bCurrentDepthEnabled = RuntimeParameters.bEnableDepth;
@@ -460,6 +466,7 @@ void AZEDCamera::GrabCallback(ESlErrorCode ErrorCode, const FSlTimestamp& Timest
 		}
 #endif
 
+		// Get the IMU rotation
 		if (TrackingState == sl::TRACKING_STATE::TRACKING_STATE_OK ||
 			TrackingState == sl::TRACKING_STATE::TRACKING_STATE_FPS_TOO_LOW)
 		{
@@ -593,8 +600,14 @@ void AZEDCamera::DisableTracking()
 
 void AZEDCamera::ResetTrackingOrigin()
 {
+	// If using an HMD, reset SDK tracking with current HMD tracking
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
+		if (!bUseHMDTrackingAsOrigin)
+		{
+			sl::mr::driftCorrectorSetTrackingOffsetTransfrom(sl::unreal::ToSlType(FTransform(TrackingParameters.Rotation, TrackingParameters.Location)));
+		}
+
 		bPositionalTrackingInitialized = false;
 
 		FVector HMDLocation;
@@ -661,7 +674,7 @@ void AZEDCamera::InitializeParameters(AZEDInitializer* ZedInitializer, bool bHMD
 
 void AZEDCamera::Init(bool bHMDEnabled)
 {
-	Batch = USlGPUTextureBatch::CreateGPUTextureBatch(FName("ZedCameraBatch"), bPassThrough ? 1 : 3);
+	Batch = USlGPUTextureBatch::CreateGPUTextureBatch(FName("ZedCameraBatch"));
 
 	if (SVOParameters.bLoop)
 	{
@@ -682,7 +695,7 @@ void AZEDCamera::Init(bool bHMDEnabled)
 				sl::mr::driftCorrectorSetTrackingOffsetTransfrom(sl::unreal::ToSlType(FTransform(TrackingParameters.Rotation, TrackingParameters.Location)));
 			}
 
-			bHMDHasTrackers = (UHeadMountedDisplayFunctionLibrary::GetNumOfTrackingSensors > 0);
+			bHMDHasTrackers = (UHeadMountedDisplayFunctionLibrary::GetNumOfTrackingSensors() > 0);
 
 			FVector HMDLocation;
 			FRotator HMDRotation;

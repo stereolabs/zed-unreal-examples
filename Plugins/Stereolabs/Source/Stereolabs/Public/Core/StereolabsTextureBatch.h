@@ -87,9 +87,8 @@ protected:
 	 * Create a batch
 	 * @param Name	  The new name of the batch
 	 * @param Type	  The type of batch
-	 * @param MinSize The minimal size of the batch
 	 */
-	static USlTextureBatch* CreateTextureBatch(const FName& Name, ESlMemoryType Type, int32 MinSize = 1);
+	static USlTextureBatch* CreateTextureBatch(const FName& Name, ESlMemoryType Type);
 
 public:
 	/** Name of the batch */
@@ -141,13 +140,12 @@ public:
 	/*
 	 * Create a GPU batch
 	 * @param Name	  The new name of the batch
-	 * @param MinSize The minimal size of the batch
 	 * @return		  The batch
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Stereolabs|Texture")
-	static USlGPUTextureBatch* CreateGPUTextureBatch(const FName& Name, int32 MinSize = 1)
+	static USlGPUTextureBatch* CreateGPUTextureBatch(const FName& Name)
 	{
-		return static_cast<USlGPUTextureBatch*>(USlTextureBatch::CreateTextureBatch(Name, ESlMemoryType::MT_GPU, MinSize));
+		return static_cast<USlGPUTextureBatch*>(USlTextureBatch::CreateTextureBatch(Name, ESlMemoryType::MT_GPU));
 	}
 
 	/*
@@ -203,13 +201,12 @@ public:
 	/*
 	 * Create a GPU batch
 	 * @param Name	  The new name of the batch
-	 * @param MinSize The minimal size of the batch
 	 * @return		  The batch
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Stereolabs|Texture")
-	static USlSimpleGPUTextureBatch* CreateSimpleGPUTextureBatch(const FName& Name, int32 MinSize = 1)
+	static USlSimpleGPUTextureBatch* CreateSimpleGPUTextureBatch(const FName& Name)
 	{
-		return static_cast<USlSimpleGPUTextureBatch*>(USlTextureBatch::CreateTextureBatch(Name, ESlMemoryType::MT_GPU, MinSize));
+		return static_cast<USlSimpleGPUTextureBatch*>(USlTextureBatch::CreateTextureBatch(Name, ESlMemoryType::MT_GPU));
 	}
 
 	/*
@@ -232,13 +229,12 @@ public:
 	/*
 	 * Create a CPU batch
 	 * @param Name	  The new name of the batch
-	 * @param MinSize The minimal size of the batch
 	 * @return		  The batch
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Stereolabs|Texture")
-	static USlCPUTextureBatch* CreateCPUTextureBatch(const FName& Name, int32 MinSize = 1)
+	static USlCPUTextureBatch* CreateCPUTextureBatch(const FName& Name)
 	{
-		return static_cast<USlCPUTextureBatch*>(USlTextureBatch::CreateTextureBatch(Name, ESlMemoryType::MT_CPU, MinSize));
+		return static_cast<USlCPUTextureBatch*>(USlTextureBatch::CreateTextureBatch(Name, ESlMemoryType::MT_CPU));
 	}
 
 	/*

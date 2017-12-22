@@ -1,6 +1,6 @@
-#include "StereolabsEditor/Private/StereolabsEditorPrivatePCH.h"
+#include "ZEDEditor/Private/ZEDEditorPrivatePCH.h"
 #include "Stereolabs/Public/Core/StereolabsCoreUtilities.h"
-#include "StereolabsEditor/Public/ZED/ZEDCameraDetails.h"
+#include "ZEDEditor/Public/ZEDCameraDetails.h"
 #include "ZED/Public/Core/ZEDCamera.h"
 #include "DesktopPlatformModule.h"
 

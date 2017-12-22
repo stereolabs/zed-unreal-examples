@@ -53,7 +53,6 @@ FSlTextueBatchMatBuffer::~FSlTextueBatchMatBuffer()
 USlTextureBatch::USlTextureBatch()
 	:
 	Name("Unnamed"),
-	MinSize(1),
 	bAsyncRetrieveEnabled(false),
 	bIsAutoAddToGrabDelegate(true)
 {
@@ -71,7 +70,7 @@ void USlTextureBatch::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-USlTextureBatch* USlTextureBatch::CreateTextureBatch(const FName& Name, ESlMemoryType Type, int32 MinSize/* = 1*/)
+USlTextureBatch* USlTextureBatch::CreateTextureBatch(const FName& Name, ESlMemoryType Type)
 {
 	USlTextureBatch* TextureBatch = nullptr;
 	
@@ -85,7 +84,6 @@ USlTextureBatch* USlTextureBatch::CreateTextureBatch(const FName& Name, ESlMemor
 	}
 
 	TextureBatch->Name = Name;
-	TextureBatch->MinSize = MinSize;
 
 	GSlCameraProxy->OnGrabThreadEnabled.AddDynamic(TextureBatch, &USlTextureBatch::SetAsyncRetrieveEnabled);
 
@@ -229,7 +227,7 @@ void USlTextureBatch::SetAsyncRetrieveEnabled(bool bEnabled)
 
 		BuffersPool.SetNum(TB_BUFFERS_POOL_SIZE);
 
-		int32 Size = TexturesPool.Num() ? TexturesPool.Num() : MinSize;
+		int32 Size = TexturesPool.Num() ? TexturesPool.Num() : 1;
 		BuffersPool[0].Mats.SetNum(Size);
 		BuffersPool[1].Mats.SetNum(Size);
 
@@ -403,7 +401,7 @@ void USlGPUTextureBatch::SetAsyncRetrieveEnabled(bool bEnabled)
 
 		BuffersPool.SetNum(TB_BUFFERS_POOL_SIZE);
 
-		int32 Size = TexturesPool.Num() ? TexturesPool.Num() : MinSize;
+		int32 Size = TexturesPool.Num() ? TexturesPool.Num() : 1;
 		BuffersPool[0].Mats.SetNum(Size);
 		BuffersPool[1].Mats.SetNum(Size);
 

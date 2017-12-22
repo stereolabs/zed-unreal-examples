@@ -743,15 +743,15 @@ public:
 	FIntPoint RetrieveMatSize;
 
 public:
-	/** Camera opened event dispatcher */
+	/** Camera opened event dispatcher. Broadcast after the camera is opened. */
 	UPROPERTY(BlueprintAssignable, Category = "Zed")
 	FSlCameraProxyDelegate OnCameraOpened;
 
-	/** Camera closed event dispatcher */
+	/** Camera closed event dispatcher. Broadcast before the camera is closed, but IsCameraOpened() will return false. */
 	UPROPERTY(BlueprintAssignable, Category = "Zed")
 	FSlCameraProxyDelegate OnCameraClosed;
 
-	/** Camera disconnected event dispatcher */
+	/** Camera disconnected event dispatcher. Broadcast after camera disconnected. */
 	UPROPERTY(BlueprintAssignable, Category = "Zed")
 	FSlCameraProxyDelegate OnCameraDisconnected;
 

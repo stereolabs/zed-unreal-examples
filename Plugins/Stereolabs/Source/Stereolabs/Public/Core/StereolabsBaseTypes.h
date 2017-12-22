@@ -1229,6 +1229,7 @@ struct STEREOLABS_API FSlTrackingParameters
 		Location(FVector::ZeroVector),
 		bEnableTracking(true),
 		bEnableSpatialMemory(false),
+		bEnablePoseSmoothing(true),
 		bLoadSpatialMemoryFile(false),
 		SpatialMemoryFileLoadingPath(""),
 		SpatialMemoryFileSavingPath("")
@@ -1264,6 +1265,13 @@ struct STEREOLABS_API FSlTrackingParameters
 			bEnableSpatialMemory,
 			*Path
 			);
+
+		GConfig->GetBool(
+			Section,
+			TEXT("bEnablePoseSmoothing"),
+			bEnablePoseSmoothing,
+			*Path
+		);
 
 		GConfig->GetBool(
 			Section,
@@ -1319,6 +1327,13 @@ struct STEREOLABS_API FSlTrackingParameters
 
 		GConfig->SetBool(
 			Section,
+			TEXT("bEnablePoseSmoothing"),
+			bEnablePoseSmoothing,
+			*Path
+		);
+
+		GConfig->SetBool(
+			Section,
 			TEXT("bLoadSpatialMemoryFile"),
 			bLoadSpatialMemoryFile,
 			*Path
@@ -1362,6 +1377,10 @@ struct STEREOLABS_API FSlTrackingParameters
 	/** Enable area localization */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Spatial Memory"))
 	bool bEnableSpatialMemory;
+
+	/** Enable smooth pose */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (DisplayName = "Smooth pose"))
+	bool bEnablePoseSmoothing;
 
 	/** Load area file when enabling tracking */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

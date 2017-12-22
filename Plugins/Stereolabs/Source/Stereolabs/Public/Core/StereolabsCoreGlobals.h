@@ -67,13 +67,17 @@ FORCEINLINE EPixelFormat GetPixelFormatFromSlTextureFormat(ESlTextureFormat Text
 		case ESlTextureFormat::TF_R32_FLOAT:
 			return EPixelFormat::PF_R32_FLOAT;
 		case ESlTextureFormat::TF_B8G8R8A8_UNORM:
-			return  EPixelFormat::PF_B8G8R8A8_UNORM; // Replace by PF_R8G8B8A8_UINT if using other engine source code
+			/*
+			 * Replace by PF_R8G8B8A8_UINT if using other engine source code.
+			 * Convert texture sample from RGRA to BGRA in material.
+			 */
+			return EPixelFormat::PF_B8G8R8A8_UNORM; 
 		case ESlTextureFormat::TF_R8G8B8A8_UINT:
-			return  EPixelFormat::PF_R8G8B8A8_UINT;
+			return EPixelFormat::PF_R8G8B8A8_UINT;
 		case ESlTextureFormat::TF_A32B32G32R32F:
-			return  EPixelFormat::PF_A32B32G32R32F;
+			return EPixelFormat::PF_A32B32G32R32F;
 		case ESlTextureFormat::TF_R8_UNORM:
-			return  EPixelFormat::PF_G8;
+			return EPixelFormat::PF_G8;
 	}
 
 	ensureMsgf(false, TEXT("Unhandled ESlTextureFormat entry %u"), (uint32)TextureFormat);
@@ -1472,6 +1476,7 @@ namespace sl
 				TrackingParameters.area_file_path = TCHAR_TO_UTF8(*UnrealData.SpatialMemoryFileLoadingPath);
 			}
 			TrackingParameters.enable_spatial_memory = UnrealData.bEnableSpatialMemory;
+			TrackingParameters.enable_pose_smoothing = UnrealData.bEnablePoseSmoothing;
 			TrackingParameters.initial_world_transform = sl::unreal::ToSlType(FTransform(UnrealData.Rotation, UnrealData.Location));
 
 			return TrackingParameters;

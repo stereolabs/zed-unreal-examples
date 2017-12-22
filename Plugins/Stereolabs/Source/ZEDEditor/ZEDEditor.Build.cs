@@ -1,11 +1,11 @@
 namespace UnrealBuildTool.Rules
 {
-	public class StereolabsEditor : ModuleRules
+	public class ZEDEditor : ModuleRules
 	{
-        public StereolabsEditor(ReadOnlyTargetRules Target) : base(Target)
+        public ZEDEditor(ReadOnlyTargetRules Target) : base(Target)
         {
-            PrivateIncludePaths.Add("StereolabsEditor/Private");
-            PublicIncludePaths.Add("StereolabsEditor/Public");
+            PrivateIncludePaths.Add("ZEDEditor/Private");
+            PublicIncludePaths.Add("ZEDEditor/Public");
 
             PrivateDependencyModuleNames.AddRange(new string[]
                 {"Slate",
@@ -15,8 +15,7 @@ namespace UnrealBuildTool.Rules
                 new string[]
                 {
                     "Stereolabs",
-                     "ZED",
-                     "SpatialMapping"
+                     "ZED"
                 }
                 );
 

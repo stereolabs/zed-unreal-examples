@@ -37,17 +37,20 @@ public class MixedReality : ModuleRules
                 PublicDelayLoadDLLs.Add(DLLName);
 
                 string DLLPath = Path.Combine(ModulePath + "/bin/", DLLName);
-               
+
                 if (Target.Type != TargetRules.TargetType.Editor)
                 {
                     if (!Directory.Exists(ProjectBinariesPathDirectory))
                     {
                         Directory.CreateDirectory(ProjectBinariesPathDirectory);
                     }
+                    // Copy to the project binary folder
                     File.Copy(DLLPath, Path.Combine(ProjectBinariesPathDirectory, DLLName), true);
 
+                    // Add library to the packaged binary folder
                     RuntimeDependencies.Add(ProjectBinariesPathDirectory + DLLName, StagedFileType.NonUFS);
                 }
+                // Remove the library if it already exist in the binary folder
                 else
                 {
                     if (Directory.Exists(ProjectBinariesPathDirectory) && File.Exists(Path.Combine(ProjectBinariesPathDirectory, DLLName)))

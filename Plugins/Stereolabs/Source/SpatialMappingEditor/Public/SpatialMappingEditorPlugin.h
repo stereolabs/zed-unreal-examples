@@ -4,7 +4,7 @@
 
 #include "ModuleManager.h"
 
-class FStereolabsEditor : public IModuleInterface
+class FStereolabsSpatialMappingEditor : public IModuleInterface
 {
 public:
 	/** IModuleInterface implementation */

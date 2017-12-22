@@ -56,7 +56,7 @@ public:
 	/*
 	 * Close the camera
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Zed|Camera")
+	UFUNCTION(BlueprintCallable, Category = "Zed")
 	void CloseZedCamera();
 
 public:
@@ -124,15 +124,15 @@ public:
 	 * Called after Zed opened if tracking is enabled in tacking parameters
 	 */
 	UFUNCTION(BlueprintNativeEvent, Category = "Zed")
-	void UpdateHUDEnablingTracking();
-	virtual void UpdateHUDEnablingTracking_Implementation();
+	void UpdateHUDEnablingZedTracking();
+	virtual void UpdateHUDEnablingZedTracking_Implementation();
 
 	/*
 	 * Called after tracking enabled
 	 */
 	UFUNCTION(BlueprintNativeEvent, Category = "Zed")
-	void UpdateHUDTrackingEnabled(bool bSuccess, ESlErrorCode ErrorCode);
-	virtual void UpdateHUDTrackingEnabled_Implementation(bool bSuccess, ESlErrorCode ErrorCode);
+	void UpdateHUDZedTrackingEnabled(bool bSuccess, ESlErrorCode ErrorCode);
+	virtual void UpdateHUDZedTrackingEnabled_Implementation(bool bSuccess, ESlErrorCode ErrorCode);
 
 	/*
 	 * Called if camera disconnected
@@ -191,6 +191,12 @@ private:
 	 */
 	UFUNCTION()
 	void OnRep_ZedPawn();
+
+	/*
+	 * Internal function that open the camera
+	 */
+	UFUNCTION()
+	void Internal_OpenZedCamera();
 
 private:
 	/*
@@ -257,13 +263,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Zed")
 	bool bOpenZedCameraAtInit;
 
-	/** True if stereo rendering should be supported. If true you must call EnableHMD before calling OpenCamera or enable StartInVR in project config. */
+	/** True if stereo rendering is supported. If true the controller will automatically open th HMD before opening the camera if any HMD is connected. */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Zed")
 	bool bStereoRenderingSupport;
-
-	/** True to enable the HMD at init */
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Zed")
-	bool bStartInVR;
 
 	/** True if player 1 */
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
@@ -315,6 +317,9 @@ private:
 	/** Reset HMD tracking origin timer handle */
 	FTimerHandle ResetHMDTrackingOriginTimerHandle;
 
+	/** Open the Zed camera after HMD enabled timer handle */
+	FTimerHandle OpenZedCameraTimerHandle;
+
 	/** Class of the Zed camera blueprint */
 	UPROPERTY()
 	UClass* ZedCameraBlueprintClass;
@@ -351,4 +356,7 @@ private:
 
 	/** HMD enabled */
 	uint8 bHMDEnabled:1;
+
+	/** True if initialized */
+	uint8 bInit:1;
 };

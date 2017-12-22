@@ -10,6 +10,9 @@
 #include "Stereolabs/Public/Utilities/StereolabsFunctionLibrary.h"
 #include "UMG.h"
 #include "UnrealNetwork.h"
+#include "Engine/Engine.h"
+#include "IHeadMountedDisplay.h"
+#include "IXRTrackingSystem.h"
 
 DEFINE_LOG_CATEGORY(ZEDPlayerController);
 
@@ -29,19 +32,17 @@ static TAutoConsoleVariable<int32> CVarZEDNoise(
 	ECVF_RenderThreadSafe
 );
 
-// Show loading text while opening camera/enabling tracking
-#define SHOW_LOADING_TEXT 0
-
 AZEDPlayerController::AZEDPlayerController()
 	:
 	bTickZedCamera(false),
 	bUseDefaultBeginPlay(true),
 	bOpenZedCameraAtInit(true),
 	bStereoRenderingSupport(true),
-	bStartInVR(true),
+	bHMDEnabled(false),
 	bIsFirstPlayer(false),
 	bUseShowOnlyList(false),
 	bHideWorldOpeningZedCamera(true),
+	bInit(false),
 	CurrentNoiseValue(0),
 	ZedPawn(nullptr),
 	ZedCamera(nullptr),
@@ -242,18 +243,57 @@ void AZEDPlayerController::Init()
 	// Enable fade post process
 	ZedPawn->Camera->AddOrUpdateBlendable(PostProcessFadeMaterialInstanceDynamic, 1.0f);
 
+	// User init
+	InitEvent();
+
+	bInit = true;
+
+	// Init controller next frame to let all objects initialize
+	if (bOpenZedCameraAtInit)
+	{
+		GetWorldTimerManager().SetTimer(InitTimerHandle, this, &AZEDPlayerController::Internal_Init, 1.0f, false, 0.0f);
+	}
+}
+
+void AZEDPlayerController::Internal_Init()
+{
+	GetWorldTimerManager().ClearTimer(InitTimerHandle);
+
+	OpenZedCamera(bHideWorldOpeningZedCamera);
+}
+
+void AZEDPlayerController::CloseZedCamera()
+{
+	GSlCameraProxy->CloseCamera();
+}
+
+void AZEDPlayerController::OpenZedCamera(bool bHideWorld)
+{
+	checkf(bInit, TEXT("Init() not called before opening the camera"));
+
+	if (bHideWorld)
+	{
+		bUseShowOnlyList = true;
+		ShowOnlyPrimitiveComponents.Empty();
+		ShowOnlyPrimitiveComponents.Add(ZedPawn->ZedLoadingWidget->WidgetComponent);
+		ShowOnlyPrimitiveComponents.Add(ZedPawn->ZedErrorWidget->WidgetComponent);
+	}
+
 	// Enable/Disable HMD
 	if (bStereoRenderingSupport)
 	{
-#if WITH_EDITOR
-		bHMDEnabled = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled();
-#else
-		if (bStartInVR)
+		// Need to enable the HMD
+		if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		{
-			bHMDEnabled = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected();
-			UHeadMountedDisplayFunctionLibrary::EnableHMD(bHMDEnabled);
+			// HMD connected
+			if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
+			{
+				// Enable
+				UHeadMountedDisplayFunctionLibrary::EnableHMD(true);
+			}
 		}
-#endif
+
+		GetWorldTimerManager().SetTimer(OpenZedCameraTimerHandle, this, &AZEDPlayerController::Internal_OpenZedCamera, 1.0f, true, 2.0f);
 	}
 	else
 	{
@@ -267,7 +307,17 @@ void AZEDPlayerController::Init()
 #else
 		UHeadMountedDisplayFunctionLibrary::EnableHMD(false);
 #endif
+
+		Internal_OpenZedCamera();
 	}
+}
+
+void AZEDPlayerController::Internal_OpenZedCamera()
+{
+	GetWorldTimerManager().ClearTimer(OpenZedCameraTimerHandle);
+
+	// Test if enable succeed
+	bHMDEnabled = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled();
 
 	if (!bHMDEnabled)
 	{
@@ -284,39 +334,6 @@ void AZEDPlayerController::Init()
 
 		ZedPawn->ZedErrorWidget->bAbsoluteLocation = true;
 		ZedPawn->ZedErrorWidget->bAbsoluteRotation = true;
-	}
-
-	// User init
-	InitEvent();
-
-	// Init controller next frame to let all objects initialize
-	GetWorldTimerManager().SetTimer(InitTimerHandle, this, &AZEDPlayerController::Internal_Init, 1.0f, false, 0.0f);
-}
-
-void AZEDPlayerController::Internal_Init()
-{
-	GetWorldTimerManager().ClearTimer(InitTimerHandle);
-
-	// Automatically open camera
-	if (bOpenZedCameraAtInit)
-	{
-		OpenZedCamera(bHideWorldOpeningZedCamera);
-	}
-}
-
-void AZEDPlayerController::CloseZedCamera()
-{
-	GSlCameraProxy->CloseCamera();
-}
-
-void AZEDPlayerController::OpenZedCamera(bool bHideWorld)
-{
-	if (bHideWorld)
-	{
-		bUseShowOnlyList = true;
-		ShowOnlyPrimitiveComponents.Empty();
-		ShowOnlyPrimitiveComponents.Add(ZedPawn->ZedLoadingWidget->WidgetComponent);
-		ShowOnlyPrimitiveComponents.Add(ZedPawn->ZedErrorWidget->WidgetComponent);
 	}
 
 	// Get Zed initializer object
@@ -392,9 +409,11 @@ void AZEDPlayerController::ZedCameraOpened()
 	// Enable tracking
 	if (ZedCamera->TrackingParameters.bEnableTracking)
 	{
-		UpdateHUDEnablingTracking();
+		UpdateHUDEnablingZedTracking();
 
 		ZedCamera->EnableTracking();
+
+		SL_LOG_W(ZEDPlayerController, "You are using an HMD, bind delegate to OnTrackingReset instead of OnTrackingEnabled to get the right tracking origin.");
 
 		/*FSlTrackingParameters TrackingParameters = ZedCamera->TrackingParameters;
 		if (bHMDEnabled)
@@ -427,18 +446,25 @@ void AZEDPlayerController::ZedCameraOpened()
 
 void AZEDPlayerController::ZedCameraTrackingEnabled(bool bSuccess, ESlErrorCode ErrorCode, const FVector& Location, const FRotator& Rotation)
 {
-	UpdateHUDTrackingEnabled(bSuccess, ErrorCode);
+	UpdateHUDZedTrackingEnabled(bSuccess, ErrorCode);
 
 	if (bSuccess)
 	{
 		// Fade to hide zed camera actor init
 		FadeIn();
 
-		// Reset HMD tracking origin. Reset is not immediate that's why the camera actor init 1s after
-		GetWorldTimerManager().SetTimer(ResetHMDTrackingOriginTimerHandle, this, &AZEDPlayerController::ResetHMDTrackingOrigin, 1.0f, false, 2.0f);
-
-		// Init zed camera actor
-		GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 1.0f, false, 3.0f);
+		if (bHMDEnabled)
+		{
+			// Reset HMD tracking origin. Reset is not immediate that's why the camera actor init 2s after
+			GetWorldTimerManager().SetTimer(ResetHMDTrackingOriginTimerHandle, this, &AZEDPlayerController::ResetHMDTrackingOrigin, 1.0f, false, 1.5f);
+			// Init zed camera actor
+			GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 1.0f, false, 3.5f);
+		}
+		else
+		{
+			// Init zed camera actor
+			GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 1.0f, false, 3.0f);
+		}
 	}
 
 	GSlCameraProxy->OnTrackingEnabled.RemoveDynamic(this, &AZEDPlayerController::ZedCameraTrackingEnabled);
@@ -500,11 +526,31 @@ void AZEDPlayerController::ResetHMDTrackingOrigin()
 {
 	GetWorldTimerManager().ClearTimer(ResetHMDTrackingOriginTimerHandle);
 
-	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	EHMDDeviceType::Type Type = GEngine->XRSystem->GetHMDDevice()->GetHMDDeviceType();
 
+	// If Oculus reset to eye level or offset in tracking
+	if (Type == EHMDDeviceType::DT_OculusRift)
+	{
+		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
+	}
+	else
+	{
+		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
+	}
+
+	// If not using HMD Tracking origin, reset to 0
 	if (!ZedCamera->bUseHMDTrackingAsOrigin)
 	{
 		UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(0.0f, EOrientPositionSelector::OrientationAndPosition);
+	}
+	// If using HMD origin but no trackers, reset location
+	else if (!UHeadMountedDisplayFunctionLibrary::HasValidTrackingPosition())
+	{
+		FRotator HMDRotation;
+		FVector HMDLocation;
+		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+
+		UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(HMDRotation.Yaw, EOrientPositionSelector::Position);
 	}
 }
 
@@ -571,11 +617,12 @@ void AZEDPlayerController::Internal_CameraDisconnected()
 {
 	GetWorldTimerManager().ClearTimer(CameraDisconnectedTimerHandle);
 
+	ZedPawn->SetActorTransform(FTransform());
+
 	if (!bHMDEnabled)
 	{
 		ZedPawn->Camera->AddOrUpdateBlendable(PostProcessZedMaterialInstanceDynamic, 0.0f);
 	}
-
 
 	if (bHMDEnabled)
 	{
@@ -644,11 +691,19 @@ void AZEDPlayerController::SetWidgetInFrontOfCamera(UZEDWidget* Widget)
 
 	if (bHMDEnabled)
 	{
-		FVector Location = ZedPawn->Camera->GetComponentLocation() + UKismetMathLibrary::GetForwardVector(FRotator(0.0f, CameraRotation.Yaw, 0.0f)) * 300.0f;
-		Widget->SetWorldLocation(Location);
+		FTransform LocalTransform(FRotator(0, 180, 0), FVector(300, 0, 0));
+		FTransform CameraTransform = ZedPawn->Camera->GetComponentToWorld();
+		CameraTransform.SetRotation(FRotator(0.0f, CameraTransform.Rotator().Yaw, 0.0).Quaternion());
+		FTransform FinalTransform = LocalTransform * CameraTransform;
 
-		FRotator Rotation = FRotator(0.0f, CameraRotation.Yaw, 0) + FRotator(0.0f, 180.0f, 0.0f);
-		Widget->SetWorldRotation(Rotation);
+		//FVector Location = ZedPawn->Camera->GetComponentLocation() + UKismetMathLibrary::GetForwardVector(FRotator(0.0f, CameraRotation.Yaw, 0.0f)) * 300.0f;
+		Widget->SetWorldLocation(FinalTransform.GetLocation());
+
+		//FRotator Rotation = FRotator(0.0f, CameraRotation.Yaw, 0) + FRotator(0.0f, 180.0f, 0.0f);
+		FRotator FinalRoation = FinalTransform.Rotator();
+		FinalRoation.Roll = 0.0f;
+		FinalRoation.Pitch = 0.0f;
+		Widget->SetWorldRotation(FinalTransform.Rotator());
 	}
 	else
 	{
@@ -675,7 +730,7 @@ void AZEDPlayerController::FadeOutToGame()
 
 void AZEDPlayerController::UpdateHUDOpeningZed_Implementation()
 {
-#if SHOW_LOADING_TEXT
+#if WITH_EDITOR
 	ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Searching for ZED camera"));
 #endif
 	ZedPawn->ZedLoadingWidget->SetVisibility(true);
@@ -702,7 +757,7 @@ void AZEDPlayerController::UpdateHUDCheckOpeningZed_Implementation()
 		ZedPawn->ZedErrorWidget->SetVisibility(false);
 
 		ZedPawn->ZedLoadingWidget->SetVisibility(true);
-#if SHOW_LOADING_TEXT
+#if WITH_EDITOR
 		ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Opening camera"));
 #endif
 	}
@@ -710,20 +765,20 @@ void AZEDPlayerController::UpdateHUDCheckOpeningZed_Implementation()
 
 void AZEDPlayerController::UpdateHUDZedOpened_Implementation()
 {
-#if SHOW_LOADING_TEXT
+#if WITH_EDITOR
 	ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Camera opened"));
 #endif
 	ZedPawn->ZedLoadingWidget->FadeOut();
 }
 
-void AZEDPlayerController::UpdateHUDEnablingTracking_Implementation()
+void AZEDPlayerController::UpdateHUDEnablingZedTracking_Implementation()
 {
-#if SHOW_LOADING_TEXT
+#if WITH_EDITOR
 	ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Enabling tracking"));
 #endif
 }
 
-void AZEDPlayerController::UpdateHUDTrackingEnabled_Implementation(bool bSuccess, ESlErrorCode ErrorCode)
+void AZEDPlayerController::UpdateHUDZedTrackingEnabled_Implementation(bool bSuccess, ESlErrorCode ErrorCode)
 {
 	if (!bSuccess)
 	{
@@ -734,7 +789,7 @@ void AZEDPlayerController::UpdateHUDTrackingEnabled_Implementation(bool bSuccess
 	}
 	else
 	{
-#if SHOW_LOADING_TEXT
+#if WITH_EDITOR
 		ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Tracking enabled"));
 #endif
 		ZedPawn->ZedLoadingWidget->FadeOut();

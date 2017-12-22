@@ -48,7 +48,7 @@ public:
 	bool BuildCubemap(const FName& Name);
 
 	/*
-	 * Capture the scene
+	 * Capture the scene at the current actor location and orientation
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Zed|Cubemap")
 	void CaptureScene();

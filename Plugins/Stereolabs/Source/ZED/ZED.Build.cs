@@ -71,14 +71,17 @@ public class ZED : ModuleRules
         string ZedConfigFileName = "ZED.ini";
         string CameraConfigFileName = "Camera.ini";
 
+        // Final path "/Saved/Config/ZED/"
         string ZedConfigFilePath = ProjectConfigPathDirectory + ZedConfigFileName;
         string CameraConfigFilePath = ProjectConfigPathDirectory + CameraConfigFileName;
 
+        // Create directory if it does not exist
         if (!Directory.Exists(ProjectConfigPathDirectory))
         {
             Directory.CreateDirectory(ProjectConfigPathDirectory);
         }
 
+        // Copy files if they don't exist
         if (!File.Exists(ZedConfigFilePath))
         {
             File.Copy(Path.Combine(ModulePath, "Defaults", ZedConfigFileName), ZedConfigFilePath, true);
@@ -98,14 +101,17 @@ public class ZED : ModuleRules
         // Calibration settings
         String MRFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Stereolabs\\mr");
 
+        // Create folder if it does not exist
         if (!Directory.Exists(MRFolderPath))
         {
             Directory.CreateDirectory(MRFolderPath);
         }
 
+        // Create the path to the file and the macro for C++
         String CalibrationFilePathDefinition = "ZED_CALIBRAITON_FILE_PATH=" + "\"" + MRFolderPath + "\\Calibration.ini" + "\"";
         CalibrationFilePathDefinition = CalibrationFilePathDefinition.Replace("\\", "/");
 
+        // Add the definition for C++
         Definitions.Add(CalibrationFilePathDefinition);
     }
 }

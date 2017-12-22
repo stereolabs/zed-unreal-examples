@@ -100,6 +100,11 @@ bool AZEDInitializer::CanEditChange(const UProperty* InProperty) const
 		return !bUseHMDTrackingAsOrigin;
 	}
 
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(FSlTrackingParameters, bEnablePoseSmoothing))
+	{
+		return TrackingParameters.bEnableSpatialMemory;
+	}
+
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(FSlRenderingParameters, ThreadingMode))
 	{
 		return !InitParameters.bUseSVO;

@@ -213,7 +213,7 @@ public:
 	/*
 	 * Fills the Mat with the given value.
 	 * This function overwrite all the matrix.
-	 * Clamped to (0, 255) and converted to unsigned char
+	 * Clamped to (0, 255) and converted to sl::uchar.
 	 * @param Value      The value to be copied all over the matrix
 	 * @param MemoryType Defines which buffer to fill, CPU and/or GPU
 	 * @return		     EC_Success if everything went well, EC_Failure otherwise.
@@ -227,6 +227,7 @@ public:
 	/*
 	 * Fills the Mat with the given value.
 	 * This function overwrite all the matrix.
+	 * Clamped to (0, 255) and converted to sl::uchar2.
 	 * @param Value      The value to be copied all over the matrix
 	 * @param MemoryType Defines which buffer to fill, CPU and/or GPU
 	 * @return		     EC_Success if everything went well, EC_Failure otherwise.
@@ -241,6 +242,7 @@ public:
 	/*
 	 * Fills the Mat with the given value.
 	 * This function overwrite all the matrix.
+	 * Clamped to (0, 255) and converted to sl::uchar3.
 	 * @param Value      The value to be copied all over the matrix
 	 * @param MemoryType Defines which buffer to fill, CPU and/or GPU
 	 * @return		     EC_Success if everything went well, EC_Failure otherwise.
@@ -254,6 +256,7 @@ public:
 	/*
 	 * Fills the Mat with the given value.
 	 * This function overwrite all the matrix.
+	 * Converted to sl::uchar4.
 	 * @param Value      The value to be copied all over the matrix
 	 * @param MemoryType Defines which buffer to fill, CPU and/or GPU
 	 * @return		     EC_Success if everything went well, EC_Failure otherwise.
@@ -327,7 +330,7 @@ public:
 	/*
 	 * Sets a value to a specific point in the matrix.
 	 * @param Coordinates The coordinate to write to.
-	 * Clamped to (0, 255) and converted to unsigned char.
+	 * Clamped to (0, 255) and converted to sl::uchar.
 	 * @param Value		  The value to be set
 	 * @param MemoryType  Defines which memory will be updated
 	 * @return			  EC_Success if everything went well, EC_Failure otherwise.
@@ -342,6 +345,7 @@ public:
 
 	/*
 	 * Sets a value to a specific point in the matrix.
+	 * Clamped to (0, 255) and converted to sl::uchar2.
 	 * @param Coordinates The coordinate to write to
 	 * @param Value		  The value to be set
 	 * @param MemoryType  Defines which memory will be updated
@@ -358,6 +362,7 @@ public:
 
 	/*
 	 * Sets a value to a specific point in the matrix.
+	 * Clamped to (0, 255) and converted to sl::uchar3.
 	 * @param Coordinates The coordinate to write to
 	 * @param Value		  The value to be set
 	 * @param MemoryType  Defines which memory will be updated
@@ -373,6 +378,7 @@ public:
 
 	/*
 	 * Sets a value to a specific point in the matrix.
+	 * Converted to sl::uchar4.
 	 * @param Coordinates The coordinate to write to
 	 * @param Value		  The value to be set
 	 * @param MemoryType  Defines which memory will be updated
