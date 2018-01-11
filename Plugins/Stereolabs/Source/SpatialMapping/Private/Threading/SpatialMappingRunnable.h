@@ -1,4 +1,7 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #pragma once
+
 #include "Stereolabs/Public/Core/StereolabsCoreGlobals.h"
 #include "Stereolabs/Public/Threading/StereolabsRunnable.h"
 #include "Stereolabs/Public/Core/StereolabsMesh.h"

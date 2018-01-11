@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
 
 #include "ZEDPrivatePCH.h"
 #include "ZED/Public/Core/ZEDPlayerController.h"
@@ -638,7 +638,7 @@ void AZEDPlayerController::ZedCameraOpened()
 		FadeIn();
 
 		// Init zed camera actor
-		GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 3.0f, false);
+		GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 1.5f, false);
 	}
 }
 

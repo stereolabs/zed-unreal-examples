@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #include "StereolabsPrivatePCH.h"
 
 #include "Stereolabs/Public/Threading/StereolabsRunnable.h"

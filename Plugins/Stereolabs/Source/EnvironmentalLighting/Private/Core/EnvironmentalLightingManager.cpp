@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #include "EnvironmentalLightingPrivatePCH.h"
 #include "EnvironmentalLighting/Public/Core/EnvironmentalLightingManager.h"
 #include "Stereolabs/Public/Core/StereolabsCameraProxy.h"

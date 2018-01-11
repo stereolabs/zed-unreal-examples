@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 using System;
 using System.IO;
 using UnrealBuildTool;

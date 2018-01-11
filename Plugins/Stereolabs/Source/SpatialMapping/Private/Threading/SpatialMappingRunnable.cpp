@@ -1,4 +1,6 @@
-﻿#include "SpatialMappingPrivatePCH.h"
+﻿//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
+#include "SpatialMappingPrivatePCH.h"
 #include "SpatialMapping/Private/Threading/SpatialMappingRunnable.h"
 #include "SpatialMapping/Public/Core/SpatialMappingManager.h"
 #include "Stereolabs/Public/Core/StereolabsCoreUtilities.h"

@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #include "SpatialMappingPrivatePCH.h"
 #include "SpatialMapping/Public/Core/SpatialMappingManager.h"
 #include "Stereolabs/Public/Core/StereolabsCameraProxy.h"

@@ -1,4 +1,5 @@
-#pragma once
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #include "SpatialMappingPrivatePCH.h"
 #include "SpatialMapping/Public/Core/SpatialMappingCubemapManager.h"
 

@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #include "ZEDPrivatePCH.h"
 #include "ZED/Classes/ZEDGameInstance.h"
 #include "Stereolabs/Public/Core/StereolabsCameraProxy.h"

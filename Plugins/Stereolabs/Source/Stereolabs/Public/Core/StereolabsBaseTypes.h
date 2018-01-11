@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #pragma once
 
 #include "AllowWindowsPlatformTypes.h"

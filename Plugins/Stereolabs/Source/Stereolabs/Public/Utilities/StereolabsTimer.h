@@ -1,5 +1,6 @@
-#pragma once
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
 
+#pragma once
 /*
  * A timer to measure threads loop time and get sleep time
  */

@@ -1,5 +1,4 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
-
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
 using UnrealBuildTool;
 using System.IO;
 using System;

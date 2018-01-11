@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #include "ZEDPrivatePCH.h"
 #include "ZED/Classes/ZEDGameViewportClient.h"
 #include "ZED/Classes/ZEDLocalPlayer.h"

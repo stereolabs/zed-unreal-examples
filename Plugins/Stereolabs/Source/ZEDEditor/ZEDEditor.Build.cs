@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 namespace UnrealBuildTool.Rules
 {
 	public class ZEDEditor : ModuleRules

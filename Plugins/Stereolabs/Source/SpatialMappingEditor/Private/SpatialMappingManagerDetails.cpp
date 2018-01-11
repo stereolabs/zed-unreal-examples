@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #include "SpatialMappingEditor/Private/SpatialMappingEditorPrivatePCH.h"
 #include "SpatialMappingEditor/Public/SpatialMappingManagerDetails.h"
 #include "Stereolabs/Public/Core/StereolabsCoreUtilities.h"

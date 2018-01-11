@@ -1,5 +1,3 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
-
 #include "ZEDPrivatePCH.h"
 
 #define LOCTEXT_NAMESPACE "FStereolabsZED"

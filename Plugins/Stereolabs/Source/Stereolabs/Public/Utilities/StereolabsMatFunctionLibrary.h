@@ -1,5 +1,6 @@
-#pragma once
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
 
+#pragma once
 #include "Engine.h"
 #include "kismet/BlueprintFunctionLibrary.h"
 

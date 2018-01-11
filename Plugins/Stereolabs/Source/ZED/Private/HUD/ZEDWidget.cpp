@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #include "ZEDPrivatePCH.h"
 #include "ZED/Public/HUD/ZEDWidget.h"
 #include "Stereolabs/Public/Utilities/StereolabsFunctionLibrary.h"
