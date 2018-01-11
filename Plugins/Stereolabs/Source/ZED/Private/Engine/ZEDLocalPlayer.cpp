@@ -202,7 +202,6 @@ bool UZEDLocalPlayer::GetProjectionData(FViewport* Viewport,
 	}
 
 	// Create the view matrix
-	//ProjectionData.ViewOrigin = ZedStereoViewLocation;
 	ProjectionData.ViewOrigin = StereoViewLocation;
 	ProjectionData.ViewRotationMatrix = FInverseRotationMatrix(ViewInfo.Rotation) * FMatrix(
 		FPlane(0, 0, 1, 0),

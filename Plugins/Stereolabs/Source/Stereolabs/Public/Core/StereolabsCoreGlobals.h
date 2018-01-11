@@ -17,7 +17,7 @@ extern STEREOLABS_API bool GSlIsGrabThreadIdInitialized;
 /** Eye half baseline of the Zed */
 extern STEREOLABS_API float GSlEyeHalfBaseline;
 
-/** Camera proxy instance, can't be null until game exit */
+/** Camera proxy instance */
 extern STEREOLABS_API class USlCameraProxy* GSlCameraProxy;
 
 /*

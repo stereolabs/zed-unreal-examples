@@ -3,6 +3,7 @@
 #include "ZEDPrivatePCH.h"
 #include "ZED/Public/Core/ZEDCamera.h"
 #include "ZED/Public/Core/ZEDCoreGlobals.h"
+#include "ZED/Public/Core/ZEDPlayerController.h"
 #include "ZED/Public/Utilities/ZEDFunctionLibrary.h"
 #include "Stereolabs/Public/Core/StereolabsCoreUtilities.h"
 #include "Stereolabs/Public/Utilities/StereolabsFunctionLibrary.h"
@@ -38,9 +39,10 @@ AZEDCamera::AZEDCamera()
 	bCurrentDepthEnabled(false),
 	bPassThrough(false),
 	bUseHMDTrackingAsOrigin(false),
-	FinalRenderPlaneDistance(1000.0f),
-	FinalCameraOffset(-20000.0f),
-	RenderPlaneDistance(1.0f),
+	bInit(false),
+	bDriftCorrectorInitialized(false),
+	HMDRenderPlaneDistance(1000.0f),
+	HMDCameraOffset(-20000.0f),
 	RenderingMode(ESlRenderingMode::RM_None),
 	Batch(nullptr),
 	LeftEyeColor(nullptr),
@@ -71,6 +73,8 @@ void AZEDCamera::BeginPlay()
 	Super::BeginPlay();
 
 	GSlCameraProxy->OnCameraClosed.AddDynamic(this, &AZEDCamera::CameraClosed);
+
+	CameraRenderPlaneDistance = GNearClippingPlane;
 }
 
 void AZEDCamera::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -204,13 +208,18 @@ bool AZEDCamera::CanEditChange(const UProperty* InProperty) const
 		return TrackingParameters.bEnableSpatialMemory;
 	}
 
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(AZEDCamera, bUseHMDTrackingAsOrigin))
+	{
+		return !GSlCameraProxy->bTrackingEnabled && UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled();
+	}
+
 	return Super::CanEditChange(InProperty);
 }
 #endif
 
-void AZEDCamera::Tick(float DeltaTime)
+void AZEDCamera::Tick(float DeltaSeconds)
 {
-	Super::Tick(DeltaTime);
+	Super::Tick(DeltaSeconds);
 
 	if (RenderingParameters.ThreadingMode == ESlThreadingMode::TM_SingleThreaded)
 	{
@@ -288,7 +297,7 @@ void AZEDCamera::Tick(float DeltaTime)
 		// Update HMD planes location
 		SetHMDPlanesLocation(HMDLocation);
 
-		if (bUpdateTracking)
+		if (bUpdateTracking && bDriftCorrectorInitialized)
 		{
 			// Try to init if using trackers
 			if (!InitializeDriftCorrectorConstOffset(HMDLocation, HMDRotation))
@@ -414,7 +423,7 @@ void AZEDCamera::Tick(float DeltaTime)
 			}
 			else
 			{
-				CreateLeftTextures();
+				CreateLeftTextures(false);
 
 				Batch->AddTexture(LeftEyeDepth);
 				Batch->AddTexture(LeftEyeNormals);
@@ -424,7 +433,7 @@ void AZEDCamera::Tick(float DeltaTime)
 
 				if (RenderingMode == ESlRenderingMode::RM_Stereo)
 				{
-					CreateRightTextures();
+					CreateRightTextures(false);
 
 					Batch->AddTexture(RightEyeDepth);
 					Batch->AddTexture(RightEyeNormals);
@@ -468,7 +477,8 @@ void AZEDCamera::GrabCallback(ESlErrorCode ErrorCode, const FSlTimestamp& Timest
 
 		// Get the IMU rotation
 		if (TrackingState == sl::TRACKING_STATE::TRACKING_STATE_OK ||
-			TrackingState == sl::TRACKING_STATE::TRACKING_STATE_FPS_TOO_LOW)
+			TrackingState == sl::TRACKING_STATE::TRACKING_STATE_FPS_TOO_LOW ||
+			TrackingState == sl::TRACKING_STATE::TRACKING_STATE_SEARCHING)
 		{
 			CurrentFrameTrackingData.ZedPathTransform = sl::unreal::ToUnrealType(Pose.pose_data);
 		}
@@ -493,9 +503,9 @@ void AZEDCamera::GrabCallback(ESlErrorCode ErrorCode, const FSlTimestamp& Timest
 	SL_SCOPE_UNLOCK
 }
 
-void AZEDCamera::CreateLeftTextures()
+void AZEDCamera::CreateLeftTextures(bool bCreateColorTexture/* = true*/)
 {
-	if (!LeftEyeColor)
+	if (bCreateColorTexture)
 	{
 		FIntPoint Resolution = GSlCameraProxy->CameraInformation.CalibrationParameters.LeftCameraParameters.Resolution;
 
@@ -506,21 +516,14 @@ void AZEDCamera::CreateLeftTextures()
 	{
 		FIntPoint TextureSize = GetSlTextureSizeFromPreset(CurrentDepthTextureQualityPreset);
 
-		if (!LeftEyeDepth)
-		{
-			LeftEyeDepth = USlMeasureTexture::CreateGPUMeasureTexture("LeftEyeDepth", TextureSize.X, TextureSize.Y, ESlMeasure::M_Depth, true, ESlTextureFormat::TF_R32_FLOAT);
-		}
-
-		if (!LeftEyeNormals)
-		{
-			LeftEyeNormals = USlMeasureTexture::CreateGPUMeasureTexture("LeftEyeNormals", TextureSize.X, TextureSize.Y, ESlMeasure::M_Normals, true, ESlTextureFormat::TF_A32B32G32R32F);
-		}
+		LeftEyeDepth = USlMeasureTexture::CreateGPUMeasureTexture("LeftEyeDepth", TextureSize.X, TextureSize.Y, ESlMeasure::M_Depth, true, ESlTextureFormat::TF_R32_FLOAT);
+		LeftEyeNormals = USlMeasureTexture::CreateGPUMeasureTexture("LeftEyeNormals", TextureSize.X, TextureSize.Y, ESlMeasure::M_Normals, true, ESlTextureFormat::TF_A32B32G32R32F);
 	}
 }
 
-void AZEDCamera::CreateRightTextures()
+void AZEDCamera::CreateRightTextures(bool bCreateColorTexture/* = true*/)
 {
-	if (!RightEyeColor)
+	if (bCreateColorTexture)
 	{
 		FIntPoint Resolution = GSlCameraProxy->CameraInformation.CalibrationParameters.LeftCameraParameters.Resolution;
 
@@ -531,15 +534,8 @@ void AZEDCamera::CreateRightTextures()
 	{
 		FIntPoint TextureSize = GetSlTextureSizeFromPreset(CurrentDepthTextureQualityPreset);
 
-		if (!RightEyeDepth)
-		{
-			RightEyeDepth = USlMeasureTexture::CreateGPUMeasureTexture("RightEyeDepth", TextureSize.X, TextureSize.Y, ESlMeasure::M_DepthRight, true, ESlTextureFormat::TF_R32_FLOAT);
-		}
-
-		if (!RightEyeNormals)
-		{
-			RightEyeNormals = USlMeasureTexture::CreateGPUMeasureTexture("RightEyeNormals", TextureSize.X, TextureSize.Y, ESlMeasure::M_NormalsRight, true, ESlTextureFormat::TF_A32B32G32R32F);
-		}
+		RightEyeDepth = USlMeasureTexture::CreateGPUMeasureTexture("RightEyeDepth", TextureSize.X, TextureSize.Y, ESlMeasure::M_DepthRight, true, ESlTextureFormat::TF_R32_FLOAT);
+		RightEyeNormals = USlMeasureTexture::CreateGPUMeasureTexture("RightEyeNormals", TextureSize.X, TextureSize.Y, ESlMeasure::M_NormalsRight, true, ESlTextureFormat::TF_A32B32G32R32F);
 	}
 }
 
@@ -674,6 +670,11 @@ void AZEDCamera::InitializeParameters(AZEDInitializer* ZedInitializer, bool bHMD
 
 void AZEDCamera::Init(bool bHMDEnabled)
 {
+	if (bInit)
+	{
+		return;
+	}
+
 	Batch = USlGPUTextureBatch::CreateGPUTextureBatch(FName("ZedCameraBatch"));
 
 	if (SVOParameters.bLoop)
@@ -687,20 +688,7 @@ void AZEDCamera::Init(bool bHMDEnabled)
 
 		if (TrackingParameters.bEnableTracking)
 		{
-			sl::mr::driftCorrectorInitialize();
-
-			sl::mr::driftCorrectorSetCalibrationTransform(sl::unreal::ToSlType(AntiDriftParameters.CalibrationTransform));
-			if (!bUseHMDTrackingAsOrigin)
-			{
-				sl::mr::driftCorrectorSetTrackingOffsetTransfrom(sl::unreal::ToSlType(FTransform(TrackingParameters.Rotation, TrackingParameters.Location)));
-			}
-
-			bHMDHasTrackers = (UHeadMountedDisplayFunctionLibrary::GetNumOfTrackingSensors() > 0);
-
-			FVector HMDLocation;
-			FRotator HMDRotation;
-			UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-			InitializeDriftCorrectorConstOffset(HMDLocation, HMDRotation);
+			InitHMDTrackingData();
 		}
 
 		// Set first delay to 1.0f to fix HMD planes wrong location at startup
@@ -727,7 +715,6 @@ void AZEDCamera::Init(bool bHMDEnabled)
 		ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Normals", LeftEyeNormals->Texture);
 	}
 
-	Batch->Clear();
 	Batch->AddTexture(LeftEyeColor);
 
 	if (!bHMDEnabled)
@@ -768,7 +755,7 @@ void AZEDCamera::Init(bool bHMDEnabled)
 		}
 	}
 
-	GrabDelegateHandle = GSlCameraProxy->AddToGrabDelegate([this](ESlErrorCode ErrorCode, const FSlTimestamp& Timestamp) 
+	GrabDelegateHandle = GSlCameraProxy->AddToGrabDelegate([this](ESlErrorCode ErrorCode, const FSlTimestamp& Timestamp)
 	{
 		GrabCallback(ErrorCode, Timestamp);
 	});
@@ -776,6 +763,8 @@ void AZEDCamera::Init(bool bHMDEnabled)
 	InitializeRendering();
 
 	OnCameraActorInitialized.Broadcast();
+
+	bInit = true;
 }
 
 void AZEDCamera::CameraClosed()
@@ -788,10 +777,26 @@ void AZEDCamera::CameraClosed()
 		GetWorldTimerManager().ClearTimer(PlanesAntiDriftTimerHandle);
 	}
 
-	if (Batch)
-	{
-		Batch->Clear();
-	}
+	GSlCameraProxy->RemoveFromGrabDelegate(GrabDelegateHandle);
+
+	UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenMode(ESpectatorScreenMode::SingleEyeCroppedToFill);
+
+	Batch->Clear();
+
+	delete LeftEyeColor;
+	LeftEyeColor = nullptr;
+	delete LeftEyeNormals;
+	LeftEyeNormals = nullptr;
+	delete LeftEyeDepth;
+	LeftEyeDepth = nullptr;
+	delete RightEyeColor;
+	RightEyeColor = nullptr;
+	delete RightEyeNormals;
+	RightEyeNormals = nullptr;
+	delete RightEyeDepth;
+	RightEyeDepth = nullptr;
+
+	bInit = false;
 }
 
 ESlErrorCode AZEDCamera::EnableSVORecording()
@@ -804,10 +809,30 @@ void AZEDCamera::DisableSVORecording()
 	GSlCameraProxy->DisableSVORecording();
 }
 
-void AZEDCamera::SetVOPlyabackLooping(bool bLooping)
+void AZEDCamera::SetVOPlaybackLooping(bool bLooping)
 {
 	SVOParameters.bLoop = bLooping;
 	GSlCameraProxy->SetSVOPlaybackLooping(bLooping);
+}
+
+void AZEDCamera::InitHMDTrackingData()
+{
+	sl::mr::driftCorrectorInitialize();
+
+	sl::mr::driftCorrectorSetCalibrationTransform(sl::unreal::ToSlType(AntiDriftParameters.CalibrationTransform));
+	if (!bUseHMDTrackingAsOrigin)
+	{
+		sl::mr::driftCorrectorSetTrackingOffsetTransfrom(sl::unreal::ToSlType(FTransform(TrackingParameters.Rotation, TrackingParameters.Location)));
+	}
+
+	bHMDHasTrackers = (UHeadMountedDisplayFunctionLibrary::GetNumOfTrackingSensors() > 0);
+
+	FVector HMDLocation;
+	FRotator HMDRotation;
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
+	InitializeDriftCorrectorConstOffset(HMDLocation, HMDRotation);
+
+	bDriftCorrectorInitialized = true;
 }
 
 bool AZEDCamera::InitializeDriftCorrectorConstOffset(const FVector& HMDLocation, const FRotator& HMDRotation)

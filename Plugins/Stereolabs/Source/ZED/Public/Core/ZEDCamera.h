@@ -158,7 +158,7 @@ public:
 	 * @param bLooping True to loop
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Zed|SVO")
-	void SetVOPlyabackLooping(bool bLooping);
+	void SetVOPlaybackLooping(bool bLooping);
 
 	/*
 	 * Initialize parameters
@@ -169,9 +169,14 @@ public:
 
 	/*
 	 * Initialize actor
-	 * @param bHMDEnabled TRue if the HMD is enabled
+	 * @param bHMDEnabled True if the HMD is enabled
 	 */
 	void Init(bool bHMDEnabled);
+
+	/*
+	 * Initialize tracking data
+	 */
+	void InitHMDTrackingData();
 
 	// ------------------------------------------------------------------
 
@@ -195,13 +200,17 @@ private:
 private:
 	/*
 	 * Create left eye textures
+	 *
+	 * @param bCeateColorTexture True to create color texture
 	 */
-	void CreateLeftTextures();
+	void CreateLeftTextures(bool bCreateColorTexture = true);
 
 	/*
 	 * Create right eye textures
+	 *
+	 * @param bCeateColorTexture True to create color texture
 	 */
-	void CreateRightTextures();
+	void CreateRightTextures(bool bCreateColorTexture = true);
 
 	/*
 	 * Called from timer to correct plane anti drift
@@ -282,15 +291,15 @@ public:
 
 	/**  Render distance of the ZED planes */
 	UPROPERTY(BlueprintReadOnly, Category = "Zed|Rendering")
-	float RenderPlaneDistance;
+	float CameraRenderPlaneDistance;
 
 	/** Render distance of the HMD planes */
 	UPROPERTY(BlueprintReadOnly,  Category = "Zed|Rendering")
-	float FinalRenderPlaneDistance;
+	float HMDRenderPlaneDistance;
 
 	/** Offset of the HMD camera */
 	UPROPERTY(BlueprintReadOnly, Category = "Zed|Rendering")
-	float FinalCameraOffset;
+	float HMDCameraOffset;
 
 	/** Rendering mode */
 	UPROPERTY(BlueprintReadOnly, Category = "Zed|Rendering")
@@ -332,9 +341,9 @@ public:
 
 	// ------------------------------------------------------------------
 
-	/** True if pass through is enabled */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zed")
-	uint8 bPassThrough:1;
+	/** True if HMD transform is used as tracking origin */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zed")
+	uint8 bUseHMDTrackingAsOrigin:1;
 
 private:
 	/** The tracking origin used if HMD enabled */
@@ -374,6 +383,9 @@ private:
 	/** Current depth texture quality preset */
 	int32 CurrentDepthTextureQualityPreset;
 
+	/** True if pass through is enabled */
+	uint8 bPassThrough:1;
+
 	/** True if positional tracking initialized from HMD positional tracking */
 	uint8 bPositionalTrackingInitialized:1;
 
@@ -383,6 +395,9 @@ private:
 	/** True if depth enabled */
 	uint8 bCurrentDepthEnabled:1;
 
-	/** True if HMD transform is used as tracking origin */
-	uint8 bUseHMDTrackingAsOrigin:1;
+	/** True if initialized */
+	uint8 bInit:1;
+
+	/** True if drift corrector initialized */
+	uint8 bDriftCorrectorInitialized:1;
 };

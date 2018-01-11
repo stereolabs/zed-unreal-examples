@@ -24,6 +24,18 @@ DEFINE_LOG_CATEGORY(ZEDPlayerController);
 	Vector.X += Value;\
 	Vector.Y += Value;\
 
+#define SHOW_ZED_MESSAGE(Canvas, Font, TextItem, Position, RowHeight)\
+	if (Font && Font->ImportOptions.bUseDistanceFieldAlpha)\
+	{\
+		TextItem.BlendMode = SE_BLEND_MaskedDistanceFieldShadowed;\
+	}\
+	else\
+	{\
+		TextItem.EnableShadow(FColor::Black);\
+	}\
+	Canvas->Canvas->DrawItem(String);\
+	Position.Y += RowHeight;\
+
 /** Activate/Deactivate noise */
 static TAutoConsoleVariable<int32> CVarZEDNoise(
 	TEXT("r.ZED.Noise"),
@@ -32,8 +44,22 @@ static TAutoConsoleVariable<int32> CVarZEDNoise(
 	ECVF_RenderThreadSafe
 );
 
+/** Show ZED FPS */
+static TAutoConsoleVariable<int32> CVarZEDShowFPS(
+	TEXT("r.ZED.ShowFPS"),
+	0,
+	TEXT("1 to show, 0 to hide"),
+	ECVF_RenderThreadSafe
+);
+
 AZEDPlayerController::AZEDPlayerController()
 	:
+	CurrentCameraFPSTimerBadFPS(0.0f),
+	CurrentCameraFPSTimerGoodFPS(0.0f),
+	CurrentFPSTimerBadFPS(0.0f),
+	CurrentFPSTimerGoodFPS(0.0f),
+	bShowLowCameraFPS(false),
+	bShowLowAppFPS(false),
 	bTickZedCamera(false),
 	bUseDefaultBeginPlay(true),
 	bOpenZedCameraAtInit(true),
@@ -42,6 +68,7 @@ AZEDPlayerController::AZEDPlayerController()
 	bIsFirstPlayer(false),
 	bUseShowOnlyList(false),
 	bHideWorldOpeningZedCamera(true),
+	bZedCameraDisconnected(false),
 	bInit(false),
 	CurrentNoiseValue(0),
 	ZedPawn(nullptr),
@@ -49,7 +76,7 @@ AZEDPlayerController::AZEDPlayerController()
 	PawnClass(AZEDPawn::StaticClass())
 {
 	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bTickEvenWhenPaused = true;
+	PrimaryActorTick.bTickEvenWhenPaused = false;
 	PrimaryActorTick.TickGroup = ETickingGroup::TG_PrePhysics;
 
 	static ConstructorHelpers::FObjectFinder<UMaterial> PostProcessFadeMaterial(TEXT("Material'/Stereolabs/ZED/Materials/M_ZED_Fade.M_ZED_Fade'"));
@@ -71,11 +98,182 @@ AZEDPlayerController::AZEDPlayerController()
 	FadeTimeline->AddInterpFloat(FadeTimelineCurve, FadeFunction);
 }
 
+void AZEDPlayerController::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
+{
+	Super::PostRenderFor(PC, Canvas, CameraPosition, CameraDir);
+
+	UFont* Font = GEngine->GetLargeFont();
+
+	FLinearColor Color;
+
+	const int32 RowHeight = FMath::TruncToInt(Font->GetMaxCharHeight() * 1.1f);
+
+	FVector2D Position;
+	
+	if (bHMDEnabled)
+	{
+		EHMDDeviceType::Type Type = GEngine->XRSystem->GetHMDDevice()->GetHMDDeviceType();
+
+		switch (Type)
+		{
+		
+			case EHMDDeviceType::DT_SteamVR:
+				Position = FVector2D(290.00f, 420.0f);
+				break;
+			case EHMDDeviceType::DT_OculusRift:
+			default:
+				Position = FVector2D(250.0f, 395.0f);
+				break;
+		}
+	}
+
+	const FVector2D Scale(1.1f, 1.1f);
+
+	if (CVarZEDShowFPS.GetValueOnAnyThread() && GSlCameraProxy->IsCameraOpened())
+	{
+		Color = ZEDFPS >= 58.0f ? FColor::Green : ZEDFPS >= 45.0f ? FColor::Yellow : FColor::Red;
+
+		{
+			FCanvasTextItem String(Position, FText::FromString(FString::Printf(TEXT("%5.2f FPS"), ZEDFPS)), Font, Color);
+			String.Scale = Scale;
+
+			if (!bHMDEnabled)
+			{
+				Position = FVector2D(40.0f, FMath::TruncToInt(GetLocalPlayer()->ViewportClient->Viewport->GetSizeXY().Y * 0.20f));
+				String.Position = Position;
+			}
+
+			SHOW_ZED_MESSAGE(Canvas, Font, String, Position, RowHeight);
+		}
+
+		{
+			FCanvasTextItem String(Position, FText::FromString(FString::Printf(TEXT("%5.2f ms"), 1.0f / ZEDFPS * 100.0f)), Font, Color);
+			String.Scale = Scale;
+
+			SHOW_ZED_MESSAGE(Canvas, Font, String, Position, RowHeight);
+		}
+	}
+
+	if (bHMDEnabled && GSlCameraProxy->IsCameraOpened())
+	{
+		if (GSlCameraProxy->GetCameraFPS() < 60.0f)
+		{
+			Color = FColor::Green;
+
+			FCanvasTextItem String(Position, FText::FromString(FString("Selected ZED camera FPS is too low : Choose 60 FPS")), Font, Color);
+			String.Scale = Scale;
+
+			SHOW_ZED_MESSAGE(Canvas, Font, String, Position, RowHeight);
+		}
+		else
+		{
+			if (bShowLowCameraFPS)
+			{
+				Color = FColor::Green;
+
+				FCanvasTextItem String(Position, FText::FromString(FString("Current ZED camera FPS is too low : Check graphics requirements or switch USB port")), Font, Color);
+				String.Scale = Scale;
+
+				SHOW_ZED_MESSAGE(Canvas, Font, String, Position, RowHeight);
+			}
+		}
+
+		if (bShowLowAppFPS)
+		{
+			Color = FColor::Green;
+
+			FCanvasTextItem String(Position, FText::FromString(FString("Application FPS is too low : Check graphics requirements")), Font, Color);
+			String.Scale = Scale;
+
+			SHOW_ZED_MESSAGE(Canvas, Font, String, Position, RowHeight);
+		}
+	}
+}
+
 void AZEDPlayerController::Tick(float DeltaSeconds)
 {
 	if (bTickZedCamera)
 	{
 		ZedCamera->Tick(DeltaSeconds);
+
+		ZEDFPS = GSlCameraProxy->GetCurrentFPS();
+		if (ZEDFPS <= 55.0f)
+		{
+			// Hitch
+			if (CurrentCameraFPSTimerGoodFPS < 4.0f && CurrentCameraFPSTimerBadFPS == 2.0f)
+			{
+				// Reset
+				CurrentCameraFPSTimerGoodFPS = 0.0f;
+			}
+			else
+			{
+				CurrentCameraFPSTimerBadFPS = FMath::Min(2.0f, CurrentCameraFPSTimerBadFPS + DeltaSeconds);
+				if (CurrentCameraFPSTimerBadFPS == 2.0f)
+				{
+					CurrentCameraFPSTimerGoodFPS = 0.0f;
+
+					bShowLowCameraFPS = true;
+				}
+			}
+		}
+		else
+		{
+			// Hitch
+			if (CurrentCameraFPSTimerBadFPS < 2.0f && CurrentCameraFPSTimerGoodFPS == 4.0f)
+			{
+				// Reset
+				CurrentCameraFPSTimerBadFPS = 0.0f;
+			}
+			else
+			{
+				CurrentCameraFPSTimerGoodFPS = FMath::Min(4.0f, CurrentCameraFPSTimerGoodFPS + DeltaSeconds);
+				if (CurrentCameraFPSTimerGoodFPS == 4.0f)
+				{
+					CurrentCameraFPSTimerBadFPS = 0.0f;
+
+					bShowLowCameraFPS = false;
+				}
+			}
+		}
+
+		if (1.0f / DeltaSeconds <= 60.0f)
+		{
+			// Hitch
+			if (CurrentFPSTimerGoodFPS < 4.0f && CurrentFPSTimerBadFPS == 2.0f)
+			{
+				// Reset
+				CurrentFPSTimerGoodFPS = 0.0f;
+			}
+			else
+			{
+				CurrentFPSTimerBadFPS = FMath::Min(2.0f, CurrentFPSTimerBadFPS + DeltaSeconds);
+				if (CurrentFPSTimerBadFPS == 2.0f)
+				{
+					CurrentFPSTimerGoodFPS = 0.0f;
+
+					bShowLowAppFPS = true;
+				}
+			}
+		}
+		else
+		{
+			// Hitch
+			if (CurrentFPSTimerBadFPS < 2.0f && CurrentFPSTimerGoodFPS == 4.0f)
+			{
+				// Reset
+				CurrentFPSTimerBadFPS = 0.0f;
+			}
+			else
+			{
+				CurrentFPSTimerGoodFPS = FMath::Min(4.0f, CurrentFPSTimerGoodFPS + DeltaSeconds);
+				if (CurrentFPSTimerGoodFPS == 4.0f)
+				{
+					CurrentFPSTimerBadFPS = 0.0f;
+
+					bShowLowAppFPS = false;
+				}
+			}
+		}
 	}
 
 	int32 NoiseValue = CVarZEDNoise.GetValueOnGameThread();
@@ -157,6 +355,15 @@ void AZEDPlayerController::BeginPlay()
 				if (bIsFirstPlayer)
 				{
 					SpawnZedCameraActor();
+
+					// Dedicated server spawn pawn before begin play
+					if (ZedPawn)
+					{
+						// Broadcasted in OnRep_ZedPawn ?
+						//OnPawnSpawned.Broadcast();
+
+						Init();
+					}
 				}
 			}
 		}
@@ -212,6 +419,8 @@ UObject* AZEDPlayerController::SpawnPawn(UClass* NewPawnClass, bool bPossess)
 		Possess(SpawnedPawn);
 	}
 
+	OnPawnSpawned.Broadcast();
+
 	return ZedPawn;
 }
 
@@ -233,6 +442,7 @@ void AZEDPlayerController::Init()
 	GSlCameraProxy->OnCameraOpened.AddDynamic(this, &AZEDPlayerController::ZedCameraOpened);
 	GSlCameraProxy->OnCameraDisconnected.AddDynamic(this, &AZEDPlayerController::ZedCameraDisconnected);
 	GSlCameraProxy->OnCameraClosed.AddDynamic(this, &AZEDPlayerController::ZedCameraClosed);
+	GSlCameraProxy->OnTrackingEnabled.AddDynamic(this, &AZEDPlayerController::ZedCameraTrackingEnabled);
 
 	// Bind event to Zed camera actor
 	ZedCamera->OnCameraActorInitialized.AddDynamic(this, &AZEDPlayerController::ZedCameraActorInitialized);
@@ -248,28 +458,45 @@ void AZEDPlayerController::Init()
 
 	bInit = true;
 
-	// Init controller next frame to let all objects initialize
+	// Open camera next frame
 	if (bOpenZedCameraAtInit)
 	{
-		GetWorldTimerManager().SetTimer(InitTimerHandle, this, &AZEDPlayerController::Internal_Init, 1.0f, false, 0.0f);
+		GetWorldTimerManager().SetTimer(InitTimerHandle, this, &AZEDPlayerController::Internal_Init, 0.1f, false);
 	}
 }
 
 void AZEDPlayerController::Internal_Init()
 {
-	GetWorldTimerManager().ClearTimer(InitTimerHandle);
-
 	OpenZedCamera(bHideWorldOpeningZedCamera);
 }
 
 void AZEDPlayerController::CloseZedCamera()
 {
+	GetWorldTimerManager().ClearTimer(DisableFadePostProcessTimerHandle);
+	ZedPawn->Camera->AddOrUpdateBlendable(PostProcessFadeMaterialInstanceDynamic, 1.0f);
+
+	FadeIn();
+
+	GetWorldTimerManager().SetTimer(CloseZedCameraTimerHandle, this, &AZEDPlayerController::Internal_CloseZedCamera, 1.5f, false);
+}
+
+void AZEDPlayerController::Internal_CloseZedCamera()
+{
 	GSlCameraProxy->CloseCamera();
+
+	ZedCamera->DisableRendering();
+
+	FadeOut();
 }
 
 void AZEDPlayerController::OpenZedCamera(bool bHideWorld)
 {
 	checkf(bInit, TEXT("Init() not called before opening the camera"));
+
+	GetWorldTimerManager().ClearTimer(CameraOpeningTimerHandle);
+
+	ZedPawn->ZedLoadingWidget->SetVisibility(false);
+	ZedPawn->ZedErrorWidget->SetVisibility(false);
 
 	if (bHideWorld)
 	{
@@ -293,16 +520,14 @@ void AZEDPlayerController::OpenZedCamera(bool bHideWorld)
 			}
 		}
 
-		GetWorldTimerManager().SetTimer(OpenZedCameraTimerHandle, this, &AZEDPlayerController::Internal_OpenZedCamera, 1.0f, true, 2.0f);
+		GetWorldTimerManager().SetTimer(OpenZedCameraTimerHandle, this, &AZEDPlayerController::Internal_OpenZedCamera, 2.0f, false);
 	}
 	else
 	{
-		bHMDEnabled = false;
-
 #if WITH_EDITOR
 		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		{
-			SL_LOG_E(ZEDPlayerController, "Play in VR but stereo rendering not supported");
+			SL_LOG_E(ZEDPlayerController, "Playing in VR but stereo rendering not supported");
 		}
 #else
 		UHeadMountedDisplayFunctionLibrary::EnableHMD(false);
@@ -314,8 +539,6 @@ void AZEDPlayerController::OpenZedCamera(bool bHideWorld)
 
 void AZEDPlayerController::Internal_OpenZedCamera()
 {
-	GetWorldTimerManager().ClearTimer(OpenZedCameraTimerHandle);
-
 	// Test if enable succeed
 	bHMDEnabled = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled();
 
@@ -327,14 +550,14 @@ void AZEDPlayerController::Internal_OpenZedCamera()
 		ZedPawn->ZedErrorWidget->WidgetComponent->SetGeometryMode(EWidgetGeometryMode::Plane);
 		ZedPawn->ZedErrorWidget->SetWorldScale3D(FVector(0.3f));
 	}
-	else
+	/*else
 	{
 		ZedPawn->ZedLoadingWidget->bAbsoluteLocation = true;
 		ZedPawn->ZedLoadingWidget->bAbsoluteRotation = true;
 
 		ZedPawn->ZedErrorWidget->bAbsoluteLocation = true;
 		ZedPawn->ZedErrorWidget->bAbsoluteRotation = true;
-	}
+	}*/
 
 	// Get Zed initializer object
 	TArray<AActor*> ZedInitializer;
@@ -367,11 +590,6 @@ void AZEDPlayerController::Internal_OpenZedCamera()
 	// Open camera with parameters
 	GSlCameraProxy->OpenCamera(ZedCamera->InitParameters);
 
-	if (ZedCamera->TrackingParameters.bEnableTracking)
-	{
-		GSlCameraProxy->OnTrackingEnabled.AddDynamic(this, &AZEDPlayerController::ZedCameraTrackingEnabled);
-	}
-
 	UpdateHUDOpeningZed();
 
 	GetWorldTimerManager().SetTimer(CameraOpeningTimerHandle, this, &AZEDPlayerController::UpdateHUDCheckOpeningZed, 1.0f, true, 2.0f);
@@ -398,7 +616,6 @@ void AZEDPlayerController::ZedCameraOpened()
 
 	if (!bHMDEnabled)
 	{
-		// Add to event
 		ViewportHelper.AddToViewportResizeEvent(GameViewport);
 	}
 
@@ -412,25 +629,6 @@ void AZEDPlayerController::ZedCameraOpened()
 		UpdateHUDEnablingZedTracking();
 
 		ZedCamera->EnableTracking();
-
-		SL_LOG_W(ZEDPlayerController, "You are using an HMD, bind delegate to OnTrackingReset instead of OnTrackingEnabled to get the right tracking origin.");
-
-		/*FSlTrackingParameters TrackingParameters = ZedCamera->TrackingParameters;
-		if (bHMDEnabled)
-		{
-			FVector HMDLocation;
-			FRotator HMDRotation;
-			FTransform TrackingOrigin;
-
-			UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-
-			TrackingOrigin = FTransform(HMDRotation, HMDLocation) * ZedCamera->AntiDriftParameters.CalibrationTransform;
-
-			TrackingParameters.Location = TrackingOrigin.GetLocation();
-			TrackingParameters.Rotation = TrackingOrigin.Rotator();
-		}
-
-		GSlCameraProxy->EnableTracking(TrackingParameters);*/
 	}
 	else
 	{
@@ -440,7 +638,7 @@ void AZEDPlayerController::ZedCameraOpened()
 		FadeIn();
 
 		// Init zed camera actor
-		GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 1.0f, false, 3.0f);
+		GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 3.0f, false);
 	}
 }
 
@@ -450,36 +648,51 @@ void AZEDPlayerController::ZedCameraTrackingEnabled(bool bSuccess, ESlErrorCode 
 
 	if (bSuccess)
 	{
-		// Fade to hide zed camera actor init
-		FadeIn();
+		if (!ZedCamera->bInit)
+		{
+			// Fade to hide zed camera actor init
+			FadeIn();
+		}
 
 		if (bHMDEnabled)
 		{
+			SL_LOG_W(ZEDPlayerController, "You are using an HMD, bind delegate to OnTrackingReset instead of OnTrackingEnabled to get the right tracking origin.");
+
 			// Reset HMD tracking origin. Reset is not immediate that's why the camera actor init 2s after
-			GetWorldTimerManager().SetTimer(ResetHMDTrackingOriginTimerHandle, this, &AZEDPlayerController::ResetHMDTrackingOrigin, 1.0f, false, 1.5f);
+			GetWorldTimerManager().SetTimer(ResetHMDTrackingOriginTimerHandle, this, &AZEDPlayerController::ResetHMDTrackingOrigin, 1.5f, false);
 			// Init zed camera actor
-			GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 1.0f, false, 3.5f);
+			GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 3.5f, false);
 		}
 		else
 		{
 			// Init zed camera actor
-			GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 1.0f, false, 3.0f);
+			GetWorldTimerManager().SetTimer(InitializeZedCameraActorTimerHandle, this, &AZEDPlayerController::Internal_InitializeZedCameraActor, 1.5f, false);
 		}
 	}
-
-	GSlCameraProxy->OnTrackingEnabled.RemoveDynamic(this, &AZEDPlayerController::ZedCameraTrackingEnabled);
 }
 
 void AZEDPlayerController::Internal_InitializeZedCameraActor()
 {
-	GetWorldTimerManager().ClearTimer(InitializeZedCameraActorTimerHandle);
-
-	// Init zed camera actor
-	ZedCamera->Init(bHMDEnabled);
+	if (!ZedCamera->bInit)
+	{
+		// Init zed camera actor
+		ZedCamera->Init(bHMDEnabled);
+	}
+	else
+	{
+		if (bHMDEnabled)
+		{
+			ZedCamera->InitHMDTrackingData();
+		}
+	}
 }
 
 void AZEDPlayerController::ZedCameraActorInitialized()
 {
+	// Enable messages display
+	GetHUD()->AddPostRenderedActor(this);
+	GetHUD()->bShowOverlays = true;
+
 	if (!bHMDEnabled)
 	{
 		ZedPawn->Camera->AddOrUpdateBlendable(PostProcessZedMaterialInstanceDynamic, 1.0f);
@@ -489,7 +702,7 @@ void AZEDPlayerController::ZedCameraActorInitialized()
 	else
 	{
 		// Set HMD camera offset
-		ZedPawn->SpringArm->SetRelativeLocation(FVector(ZedCamera->FinalCameraOffset, 0.0f, 0.0f));
+		ZedPawn->SpringArm->SetRelativeLocation(FVector(ZedCamera->HMDCameraOffset, 0.0f, 0.0f));
 
 		ZedCamera->AddOrUpdatePostProcess(PostProcessZedMaterialInstanceDynamic,  1.0f);
 
@@ -517,15 +730,13 @@ void AZEDPlayerController::ZedCameraActorInitialized()
 	bUseShowOnlyList = false;
 	ShowOnlyPrimitiveComponents.Empty();
 
-	GetWorldTimerManager().SetTimer(FadeOutTimerHandle, this, &AZEDPlayerController::FadeOutToGame, 1.0f, false, 1.0f);
+	GetWorldTimerManager().SetTimer(FadeOutTimerHandle, this, &AZEDPlayerController::FadeOutToGame, 1.0f, false);
 
 	bTickZedCamera = true;
 }
 
 void AZEDPlayerController::ResetHMDTrackingOrigin()
 {
-	GetWorldTimerManager().ClearTimer(ResetHMDTrackingOriginTimerHandle);
-
 	EHMDDeviceType::Type Type = GEngine->XRSystem->GetHMDDevice()->GetHMDDeviceType();
 
 	// If Oculus reset to eye level or offset in tracking
@@ -586,7 +797,6 @@ void AZEDPlayerController::Fading(float FadingFactor)
 
 void AZEDPlayerController::FadeIn()
 {
-	GetWorldTimerManager().ClearTimer(DisableFadePostProcessTimerHandle);
 	ZedPawn->Camera->AddOrUpdateBlendable(PostProcessFadeMaterialInstanceDynamic, 1.0f);
 
 	FadeTimeline->ReverseFromEnd();
@@ -594,7 +804,6 @@ void AZEDPlayerController::FadeIn()
 
 void AZEDPlayerController::FadeOut()
 {
-	GetWorldTimerManager().ClearTimer(DisableFadePostProcessTimerHandle);
 	ZedPawn->Camera->AddOrUpdateBlendable(PostProcessFadeMaterialInstanceDynamic, 1.0f);
 
 	FadeTimeline->PlayFromStart();
@@ -602,8 +811,6 @@ void AZEDPlayerController::FadeOut()
 
 void AZEDPlayerController::DisableFadePostProcess()
 {
-	GetWorldTimerManager().ClearTimer(DisableFadePostProcessTimerHandle);
-
 	// If camera disconnected right before disabling fade post process
 	if (!GSlCameraProxy->IsCameraConnected())
 	{
@@ -613,17 +820,8 @@ void AZEDPlayerController::DisableFadePostProcess()
 	ZedPawn->Camera->AddOrUpdateBlendable(PostProcessFadeMaterialInstanceDynamic, 0.0f);
 }
 
-void AZEDPlayerController::Internal_CameraDisconnected()
+void AZEDPlayerController::Internal_ZedCameraDisconnected()
 {
-	GetWorldTimerManager().ClearTimer(CameraDisconnectedTimerHandle);
-
-	ZedPawn->SetActorTransform(FTransform());
-
-	if (!bHMDEnabled)
-	{
-		ZedPawn->Camera->AddOrUpdateBlendable(PostProcessZedMaterialInstanceDynamic, 0.0f);
-	}
-
 	if (bHMDEnabled)
 	{
 		ZedPawn->Camera->PostProcessSettings.bDeferredAA = true;
@@ -635,6 +833,9 @@ void AZEDPlayerController::Internal_CameraDisconnected()
 	}
 
 	ZedPawn->Camera->PostProcessSettings.bVirtualObjectsPostProcess = false;
+	ZedPawn->Camera->AddOrUpdateBlendable(PostProcessZedMaterialInstanceDynamic, 0.0f);
+
+	ZedCamera->DisableRendering();
 
 	UpdateHUDZedDisconnected();
 
@@ -647,20 +848,37 @@ void AZEDPlayerController::Internal_CameraDisconnected()
 
 void AZEDPlayerController::ZedCameraDisconnected()
 {
-	bTickZedCamera = false;
-
-	GSlCameraProxy->CloseCamera();
-
+	GetWorldTimerManager().ClearTimer(DisableFadePostProcessTimerHandle);
 	ZedPawn->Camera->AddOrUpdateBlendable(PostProcessFadeMaterialInstanceDynamic, 1.0f);
 
 	FadeIn();
 
-	GetWorldTimerManager().SetTimer(CameraDisconnectedTimerHandle, this, &AZEDPlayerController::Internal_CameraDisconnected, 1.0f, false, 2.0f);
+	bZedCameraDisconnected = true;
+
+	GSlCameraProxy->CloseCamera();
+
+	GetWorldTimerManager().SetTimer(CameraDisconnectedTimerHandle, this, &AZEDPlayerController::Internal_ZedCameraDisconnected, 1.5f, false);
 }
 
 void AZEDPlayerController::ZedCameraClosed()
 {
-	GetWorldTimerManager().ClearTimer(NoiseTimerHandle);
+	bTickZedCamera = false;
+
+	if (!bZedCameraDisconnected)
+	{
+		if (bHMDEnabled)
+		{
+			ZedPawn->Camera->PostProcessSettings.bDeferredAA = true;
+			ZedPawn->Camera->PostProcessSettings.bPostProcessing = true;
+			ZedPawn->Camera->CameraRenderingSettings.bLighting = true;
+			ZedPawn->Camera->CameraRenderingSettings.bVelocity = true;
+
+			ConsoleCommand(TEXT("vr.SpectatorScreenMode 3"), true);
+		}
+
+		ZedPawn->Camera->PostProcessSettings.bVirtualObjectsPostProcess = false;
+		ZedPawn->Camera->AddOrUpdateBlendable(PostProcessZedMaterialInstanceDynamic, 0.0f);
+	}
 }
 
 void AZEDPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -687,7 +905,7 @@ void AZEDPlayerController::OnRep_ZedPawn()
 
 void AZEDPlayerController::SetWidgetInFrontOfCamera(UZEDWidget* Widget)
 {
-	FRotator CameraRotation = ZedPawn->Camera->GetComponentRotation();
+	/*FRotator CameraRotation = ZedPawn->Camera->GetComponentRotation();
 
 	if (bHMDEnabled)
 	{
@@ -700,10 +918,10 @@ void AZEDPlayerController::SetWidgetInFrontOfCamera(UZEDWidget* Widget)
 		Widget->SetWorldLocation(FinalTransform.GetLocation());
 
 		//FRotator Rotation = FRotator(0.0f, CameraRotation.Yaw, 0) + FRotator(0.0f, 180.0f, 0.0f);
-		FRotator FinalRoation = FinalTransform.Rotator();
-		FinalRoation.Roll = 0.0f;
-		FinalRoation.Pitch = 0.0f;
-		Widget->SetWorldRotation(FinalTransform.Rotator());
+		FRotator FinalRotation = FinalTransform.Rotator();
+		FinalRotation.Roll = 0.0f;
+		FinalRotation.Pitch = 0.0f;
+		Widget->SetWorldRotation(FinalRotation);
 	}
 	else
 	{
@@ -716,16 +934,14 @@ void AZEDPlayerController::SetWidgetInFrontOfCamera(UZEDWidget* Widget)
 
 		Widget->SetRelativeLocation(Location);
 		Widget->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
-	}
+	}*/
 }
 
 void AZEDPlayerController::FadeOutToGame()
 {
-	GetWorldTimerManager().ClearTimer(FadeOutTimerHandle);
-
 	FadeOut();
 
-	GetWorldTimerManager().SetTimer(DisableFadePostProcessTimerHandle, this, &AZEDPlayerController::DisableFadePostProcess, 1.0f, false, 2.0f);
+	GetWorldTimerManager().SetTimer(DisableFadePostProcessTimerHandle, this, &AZEDPlayerController::DisableFadePostProcess, 2.0f, false);
 }
 
 void AZEDPlayerController::UpdateHUDOpeningZed_Implementation()

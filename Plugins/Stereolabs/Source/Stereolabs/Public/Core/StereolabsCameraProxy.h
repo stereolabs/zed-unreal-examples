@@ -83,7 +83,7 @@ struct STEREOLABS_API FGrabDelegateHandle
 };
 
 /*
- * Interface for blueprint actors that ned to be added to OnGrabDoneDelegate
+ * Interface for blueprint actors that need to be added to OnGrabDoneDelegate
  */
 UINTERFACE()
 class STEREOLABS_API UGrabCallbackInterface : public UInterface
@@ -582,11 +582,18 @@ public:
 
 	/*
 	 * It is based on the difference of camera timestamps between two successful grab().
-     *
 	 * @return The current FPS of the thread calling grab()
 	 */
-	UFUNCTION(BlueprintPure, meta = (Keywords = "set zed current fps"), Category = "Zed|Camera")
+	UFUNCTION(BlueprintPure, meta = (Keywords = "get zed current fps"), Category = "Zed|Camera")
 	float GetCurrentFPS();
+
+	/*
+	 * Returns the number of frame dropped since \ref grab has been called for the first time.
+	 * Based on camera timestamp and FPS comparison.
+	 * @return The number of frame dropped since first grab call.
+	 */
+	UFUNCTION(BlueprintPure, meta = (Keywords = "get zed frame drop count"), Category = "Zed|Camera")
+	float GetFrameDroppedCount();
 
 	/*
 	 * Resets the self camera calibration. This function can be called at any time AFTER the open function has been called.

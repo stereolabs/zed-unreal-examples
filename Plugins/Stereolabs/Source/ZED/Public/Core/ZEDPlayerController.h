@@ -13,14 +13,9 @@
 DECLARE_LOG_CATEGORY_EXTERN(ZEDPlayerController, Log, All);
 
 /*
- * Notify that pawn spawned. Broadcast only client side
+ * Simple delegate
  */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FZEDControllerPawnSpawned);
-
-/*
- * Called before opening Zed camera
- */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FZEDControllerPreCameraOpening);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FZEDPlayerControllerDelegate);
 
 /*
  * Base class for controller using the Zed.
@@ -32,6 +27,8 @@ class ZED_API AZEDPlayerController : public APlayerController
 
 public:
 	AZEDPlayerController();
+
+	virtual void PostRenderFor(class APlayerController* PC, class UCanvas* Canvas, FVector CameraPosition, FVector CameraDir) override;
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
@@ -193,10 +190,16 @@ private:
 	void OnRep_ZedPawn();
 
 	/*
-	 * Internal function that open the camera
+	 * Open the camera
 	 */
 	UFUNCTION()
 	void Internal_OpenZedCamera();
+
+
+	/*
+	 * Close the camera
+	 */
+	void Internal_CloseZedCamera();
 
 private:
 	/*
@@ -207,7 +210,7 @@ private:
 	/*
 	 * Reset rendering and show error message
 	 */
-	void Internal_CameraDisconnected();
+	void Internal_ZedCameraDisconnected();
 
 	/*
 	 * Update noise in post process
@@ -241,11 +244,11 @@ public:
 
 	/** Pawn spawned delegate */
 	UPROPERTY(BlueprintAssignable, Category = "Zed")
-	FZEDControllerPawnSpawned OnPawnSpawned;
+	FZEDPlayerControllerDelegate OnPawnSpawned;
 
 	/** Zed camera actor initialization */
 	UPROPERTY(BlueprintAssignable, Category = "Zed")
-	FZEDControllerPreCameraOpening OnPreZedCameraOpening;
+	FZEDPlayerControllerDelegate OnPreZedCameraOpening;
 
 	/** The current Zed pawn possessed */
 	UPROPERTY(BlueprintReadOnly, Category = "Zed", ReplicatedUsing = OnRep_ZedPawn)
@@ -320,6 +323,24 @@ private:
 	/** Open the Zed camera after HMD enabled timer handle */
 	FTimerHandle OpenZedCameraTimerHandle;
 
+	/** Close the Zed camera after fade */
+	FTimerHandle CloseZedCameraTimerHandle;
+
+	/** Current FPS timer */
+	float ZEDFPS;
+
+	/** Current FPS timer */
+	float CurrentFPSTimerBadFPS;
+
+	/** Current FPS timer */
+	float CurrentFPSTimerGoodFPS;
+
+	/** Current camera FPS timer */
+	float CurrentCameraFPSTimerBadFPS;
+
+	/** Current camera FPS timer */
+	float CurrentCameraFPSTimerGoodFPS;
+
 	/** Class of the Zed camera blueprint */
 	UPROPERTY()
 	UClass* ZedCameraBlueprintClass;
@@ -359,4 +380,13 @@ private:
 
 	/** True if initialized */
 	uint8 bInit:1;
+
+	/** True to show low camera fps message */
+	uint8 bShowLowCameraFPS:1;
+
+	/** True to show low app fps message */
+	uint8 bShowLowAppFPS:1;
+
+	/** True if camera disconnected */
+	uint8 bZedCameraDisconnected:1;
 };

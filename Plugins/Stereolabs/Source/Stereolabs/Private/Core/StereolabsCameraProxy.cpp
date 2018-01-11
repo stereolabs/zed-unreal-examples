@@ -275,6 +275,9 @@ void USlCameraProxy::CloseCamera()
 	// Disable grab
 	bGrabEnabled = false;
 
+	bTrackingEnabled = false;
+	bSpatialMappingEnabled = false;
+
 	// Still trying to open the camera
 	if (OpenCameraAsyncTask && !OpenCameraAsyncTask->IsDone())
 	{
@@ -845,6 +848,13 @@ void USlCameraProxy::SetCameraSettings(const FSlCameraSettings& NewCameraSetting
 
 FSlTimestamp USlCameraProxy::GetTimestamp(ESlTimeReference TimeReference)
 {
+	if (TimeReference == ESlTimeReference::TR_Image)
+	{
+		SL_SCOPE_LOCK(Lock, GrabSection)
+			return Zed.getTimestamp(sl::unreal::ToSlType(ESlTimeReference::TR_Image));
+		SL_SCOPE_UNLOCK
+	}
+
 	return Zed.getTimestamp(sl::unreal::ToSlType(TimeReference));
 }
 
@@ -1285,9 +1295,12 @@ void USlCameraProxy::SetCameraFPS(int NewFPS)
 
 float USlCameraProxy::GetCurrentFPS()
 {
-	SL_SCOPE_LOCK(Lock, GrabSection)
-		return Zed.getCurrentFPS();
-	SL_SCOPE_UNLOCK
+	return Zed.getCurrentFPS();
+}
+
+float USlCameraProxy::GetFrameDroppedCount()
+{
+	return Zed.getFrameDroppedCount();
 }
 
 void USlCameraProxy::ResetSelfCalibration()

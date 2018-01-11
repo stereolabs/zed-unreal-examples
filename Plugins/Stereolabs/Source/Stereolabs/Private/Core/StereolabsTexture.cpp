@@ -9,7 +9,8 @@
 typedef FD3D11StateCacheBase FD3D11StateCache;
 #include "D3D11Resources.h"
 
-#include "Stereolabs/Public/Utilities/OpenGLWindowsFixed.h"
+#define PLUGIN_OPENGL
+#include "OpenGLWindows.h"
 #include "BoundShaderStateCache.h"
 #include "OpenGLUtil.h"
 #include "OpenGLResources.h"

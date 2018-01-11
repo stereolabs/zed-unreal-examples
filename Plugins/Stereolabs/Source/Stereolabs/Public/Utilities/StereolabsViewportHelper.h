@@ -4,6 +4,19 @@
 
 /*
  * Helper class to cache viewport data
+ *
+ * Example :
+ *
+ * UGameViewportClient* GameViewport = GetLocalPlayer()->ViewportClient;
+ * check(GameViewport);
+ *
+ *	if (!UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+ *  {
+ *		ViewportHelper.AddToViewportResizeEvent(GameViewport);
+ *	}
+ *
+ *	ViewportHelper.Update(GameViewport->Viewport->GetSizeXY());
+ *
  */
 USTRUCT(BlueprintType)
 struct STEREOLABS_API FSlViewportHelper
@@ -22,7 +35,7 @@ public:
 	/** Return true if in viewport */
 	FORCEINLINE bool IsInViewport(int32 X, int32 Y)
 	{
-		return (X >= Offset.X && Y >= Offset.Y && X <= Size.X - Offset.X && Y <= Size.Y - Offset.Y);
+		return (X >= RangeX.X && Y >= RangeY.X && X <= RangeX.Y && Y <= RangeY.Y);
 	}
 
 public:

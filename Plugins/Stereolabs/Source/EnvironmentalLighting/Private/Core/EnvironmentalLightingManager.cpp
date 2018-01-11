@@ -5,6 +5,14 @@
 
 #include <sl_mr_core/EnvironmentalLighting.hpp>
 
+/** Set environmental lighting max intensity */
+static TAutoConsoleVariable<float> CVarEnvLightMaxIntensity(
+	TEXT("r.ZED.EnvLightMaxIntensity"),
+	1.0f,
+	TEXT("Default to 1.0, range [0.005, 2.0]"),
+	ECVF_SetByConsole
+);
+
 AEnvironmentalLightingManager::AEnvironmentalLightingManager()
 	:
 	Batch(nullptr),
@@ -18,10 +26,7 @@ void AEnvironmentalLightingManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	LeftEyeTexture = USlViewTexture::CreateCPUViewTexture(FName("EnvLightingLeftView"), 128, 72, ESlView::V_Left);
-
 	Batch = USlCPUTextureBatch::CreateCPUTextureBatch(FName("EnvironmentalLightingBatch"));
-	Batch->AddTexture(LeftEyeTexture);
 
 	sl::mr::environmentalLightingInitialize();
 
@@ -86,7 +91,7 @@ void AEnvironmentalLightingManager::Tick(float DeltaSeconds)
 		EnvironmentalLightingSettings.Exposure += (EnvironmentalLightingSettings.Exposure > 0.1f ? 0.2f : 0.0f);
 		EnvironmentalLightingSettings.Exposure = FMath::Min(2.0f, EnvironmentalLightingSettings.Exposure * 2.0f);
 
-		LightComponent->SetIntensity(FMath::Clamp(EnvironmentalLightingSettings.Exposure, 0.005f, 1.0f));
+		LightComponent->SetIntensity(FMath::Clamp(EnvironmentalLightingSettings.Exposure, 0.005f, CVarEnvLightMaxIntensity.GetValueOnGameThread()));
 		LightComponent->SetEnvironmentalLightingSettings(EnvironmentalLightingSettings);
 	}
 	else
@@ -97,6 +102,20 @@ void AEnvironmentalLightingManager::Tick(float DeltaSeconds)
 
 void AEnvironmentalLightingManager::ToggleTick()
 {
+	if (GSlCameraProxy->IsCameraOpened())
+	{
+		LeftEyeTexture = USlViewTexture::CreateCPUViewTexture(FName("EnvLightingLeftView"), 128, 72, ESlView::V_Left);
+
+		Batch->AddTexture(LeftEyeTexture);
+	}
+	else
+	{
+		Batch->Clear();
+
+		delete LeftEyeTexture;
+		LeftEyeTexture = nullptr;		
+	}
+
 	SetActorTickEnabled(GSlCameraProxy->IsCameraOpened());
 }
 

@@ -34,8 +34,10 @@ AZEDPawn::AZEDPawn()
 
 	// Zed loading widget
 	ZedLoadingWidget = CreateDefaultSubobject<UZEDWidget>(TEXT("LoadingMessage"));
-	ZedLoadingWidget->SetupAttachment(SpringArm);
+	ZedLoadingWidget->SetupAttachment(Camera);
 	ZedLoadingWidget->SetWorldScale3D(FVector(0.5f));
+	ZedLoadingWidget->SetRelativeLocation(FVector(300.0f, 0.0f, 0.0f));
+	ZedLoadingWidget->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
 	ZedLoadingWidget->WidgetComponent->SetMaterial(0, ZedWidgetSourceMaterial);
 	ZedLoadingWidget->WidgetComponent->SetWidgetSpace(EWidgetSpace::World);
 	ZedLoadingWidget->WidgetComponent->SetWidgetClass(ZedLoadingSourceWidget);
@@ -47,8 +49,10 @@ AZEDPawn::AZEDPawn()
 
 	// Zed error widget
 	ZedErrorWidget = CreateDefaultSubobject<UZEDWidget>(TEXT("ErrorMessage"));
-	ZedErrorWidget->SetupAttachment(SpringArm);
+	ZedErrorWidget->SetupAttachment(Camera);
 	ZedErrorWidget->SetWorldScale3D(FVector(0.5f));
+	ZedErrorWidget->SetRelativeLocation(FVector(300.0f, 0.0f, 0.0f));
+	ZedErrorWidget->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
 	ZedErrorWidget->WidgetComponent->SetMaterial(0, ZedWidgetSourceMaterial);
 	ZedErrorWidget->WidgetComponent->SetWidgetSpace(EWidgetSpace::World);
 	ZedErrorWidget->WidgetComponent->SetWidgetClass(ZedErrorSourceWidget);
