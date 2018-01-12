@@ -1,5 +1,7 @@
-#ifndef __UTILS_DEFINES_H__
-#define __UTILS_DEFINES_H__
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
+#ifndef __DEFINES_H__
+#define __DEFINES_H__
 
 #ifdef _WIN32 
 	#ifdef  SLMRCORE_EXPORT  
@@ -96,4 +98,4 @@ namespace sl {
 	}
 }
 
-#endif // __UTILS_DEFINES_H__
+#endif // __DEFINES_H__

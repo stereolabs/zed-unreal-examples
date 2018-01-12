@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #ifndef __LATENCY_H__
 #define __LATENCY_H__
 
@@ -24,8 +26,8 @@ namespace sl {
 
 		/**
 		 * \brief Delete latency corrector
-		 * @param timeStamp        Time stamp corresponding transform
-		 * @param outTransform     Time latency transform
+		 * @param timeStamp        Timestamp of the transform
+		 * @param outTransform     Retrieved transform
 		 * @return True if the transform is retrieved
 		 */
 		SLMRCORE_API bool latencyCorrectorGetTransform(sl::timeStamp timeStamp, sl::Transform& outTransform, bool useLatencyTime = true);

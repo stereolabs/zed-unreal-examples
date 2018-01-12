@@ -1,5 +1,7 @@
-#ifndef __UTILS_RENDERING_H__
-#define __UTILS_RENDERING_H__
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
+#ifndef __RENDERING_H__
+#define __RENDERING_H__
 
 #include "sl_mr_core/defines.hpp"
 
@@ -60,4 +62,4 @@ namespace sl {
 	}
 }
 
-#endif // __UTILS_RENDERING_H__
+#endif // __RENDERING_H__

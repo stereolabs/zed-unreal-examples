@@ -105,10 +105,9 @@ void AZEDPlayerController::PostRenderFor(APlayerController* PC, UCanvas* Canvas,
 	UFont* Font = GEngine->GetLargeFont();
 
 	FLinearColor Color;
+	FVector2D Position;
 
 	const int32 RowHeight = FMath::TruncToInt(Font->GetMaxCharHeight() * 1.1f);
-
-	FVector2D Position;
 	
 	if (bHMDEnabled)
 	{
@@ -122,7 +121,7 @@ void AZEDPlayerController::PostRenderFor(APlayerController* PC, UCanvas* Canvas,
 				break;
 			case EHMDDeviceType::DT_OculusRift:
 			default:
-				Position = FVector2D(250.0f, 395.0f);
+				Position = FVector2D(290.0f, 395.0f);
 				break;
 		}
 	}
@@ -156,10 +155,10 @@ void AZEDPlayerController::PostRenderFor(APlayerController* PC, UCanvas* Canvas,
 
 	if (bHMDEnabled && GSlCameraProxy->IsCameraOpened())
 	{
+		Color = FColor::Green;
+
 		if (GSlCameraProxy->GetCameraFPS() < 60.0f)
 		{
-			Color = FColor::Green;
-
 			FCanvasTextItem String(Position, FText::FromString(FString("Selected ZED camera FPS is too low : Choose 60 FPS")), Font, Color);
 			String.Scale = Scale;
 
@@ -169,8 +168,6 @@ void AZEDPlayerController::PostRenderFor(APlayerController* PC, UCanvas* Canvas,
 		{
 			if (bShowLowCameraFPS)
 			{
-				Color = FColor::Green;
-
 				FCanvasTextItem String(Position, FText::FromString(FString("Current ZED camera FPS is too low : Check graphics requirements or switch USB port")), Font, Color);
 				String.Scale = Scale;
 
@@ -180,8 +177,6 @@ void AZEDPlayerController::PostRenderFor(APlayerController* PC, UCanvas* Canvas,
 
 		if (bShowLowAppFPS)
 		{
-			Color = FColor::Green;
-
 			FCanvasTextItem String(Position, FText::FromString(FString("Application FPS is too low : Check graphics requirements")), Font, Color);
 			String.Scale = Scale;
 
@@ -354,14 +349,17 @@ void AZEDPlayerController::BeginPlay()
 				// First player
 				if (bIsFirstPlayer)
 				{
+					// Dedicated server spawn pawn before begin play
+					if (ZedPawn)
+					{
+						OnPawnSpawned.Broadcast();
+					}
+
 					SpawnZedCameraActor();
 
 					// Dedicated server spawn pawn before begin play
 					if (ZedPawn)
 					{
-						// Broadcasted in OnRep_ZedPawn ?
-						//OnPawnSpawned.Broadcast();
-
 						Init();
 					}
 				}
@@ -431,6 +429,11 @@ void AZEDPlayerController::SpawnZedCameraActor()
 
 void AZEDPlayerController::Init()
 {
+	if (bInit)
+	{
+		return;
+	}
+
 	// Attach Zed camera actor to pawn
 	ZedCamera->AttachToComponent(ZedPawn->GetRootComponent(), FAttachmentTransformRules(EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, false));
 
@@ -461,7 +464,7 @@ void AZEDPlayerController::Init()
 	// Open camera next frame
 	if (bOpenZedCameraAtInit)
 	{
-		GetWorldTimerManager().SetTimer(InitTimerHandle, this, &AZEDPlayerController::Internal_Init, 0.1f, false);
+		GetWorldTimerManager().SetTimer(InitTimerHandle, this, &AZEDPlayerController::Internal_Init, 0.001f, false);
 	}
 }
 
@@ -828,8 +831,6 @@ void AZEDPlayerController::Internal_ZedCameraDisconnected()
 		ZedPawn->Camera->PostProcessSettings.bPostProcessing = true;
 		ZedPawn->Camera->CameraRenderingSettings.bLighting = true;
 		ZedPawn->Camera->CameraRenderingSettings.bVelocity = true;
-
-		ConsoleCommand(TEXT("vr.SpectatorScreenMode 3"), true);
 	}
 
 	ZedPawn->Camera->PostProcessSettings.bVirtualObjectsPostProcess = false;

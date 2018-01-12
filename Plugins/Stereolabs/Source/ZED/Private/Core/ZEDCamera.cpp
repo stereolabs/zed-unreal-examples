@@ -299,24 +299,18 @@ void AZEDCamera::Tick(float DeltaSeconds)
 
 		if (bUpdateTracking && bDriftCorrectorInitialized)
 		{
-			// Try to init if using trackers
-			if (!InitializeDriftCorrectorConstOffset(HMDLocation, HMDRotation))
-			{
-				bUpdateTracking = false;
-			}
-
-			if (bUpdateTracking)
-			{
-				// Remove HMD origin from tracking
-				FZEDTrackingData TmpTrackingData = TrackingData;
-				TmpTrackingData.ZedPathTransform = TmpTrackingData.ZedPathTransform * TrackingOriginFromHMD.Inverse();
+			// Initialize drift corrector if failed because out of tracking area
+			InitializeDriftCorrectorConstOffset(HMDLocation, HMDRotation);
+			
+			// Remove HMD origin from tracking
+			FZEDTrackingData TmpTrackingData = TrackingData;
+			TmpTrackingData.ZedPathTransform = TmpTrackingData.ZedPathTransform * TrackingOriginFromHMD.Inverse();
 				
-				sl::mr::trackingData SlTrackingData = sl::unreal::ToSlType(TmpTrackingData);
-				sl::mr::driftCorrectorGetTrackingData(SlTrackingData, SlHMDTransform, SlLatencyTransform, bHMDHasTrackers && UHeadMountedDisplayFunctionLibrary::HasValidTrackingPosition(), true);
+			sl::mr::trackingData SlTrackingData = sl::unreal::ToSlType(TmpTrackingData);
+			sl::mr::driftCorrectorGetTrackingData(SlTrackingData, SlHMDTransform, SlLatencyTransform, bHMDHasTrackers && UHeadMountedDisplayFunctionLibrary::HasValidTrackingPosition(), true);
 
-				TrackingData.ZedWorldTransform = sl::unreal::ToUnrealType(SlTrackingData.zedWorldTransform);
-				TrackingData.OffsetZedWorldTransform = sl::unreal::ToUnrealType(SlTrackingData.offsetZedWorldTransform);
-			}
+			TrackingData.ZedWorldTransform = sl::unreal::ToUnrealType(SlTrackingData.zedWorldTransform);
+			TrackingData.OffsetZedWorldTransform = sl::unreal::ToUnrealType(SlTrackingData.offsetZedWorldTransform);
 		}
 	}
 	// Mono update

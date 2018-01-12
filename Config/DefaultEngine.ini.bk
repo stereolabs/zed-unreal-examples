@@ -1,5 +1,8 @@
 [URL]
 [/Script/EngineSettings.GameMapsSettings]
+EditorStartupMap=/Game/Levels/L_Passthrough.L_Passthrough
+GameDefaultMap=/Game/Levels/L_Passthrough.L_Passthrough
+bUseSplitscreen=False
 GlobalDefaultGameMode=/Stereolabs/ZED/Blueprints/GameMode/BP_ZED_GameMode.BP_ZED_GameMode_C
 GameInstanceClass=/Script/ZED.ZEDGameInstance
 
@@ -7,18 +10,26 @@ GameInstanceClass=/Script/ZED.ZEDGameInstance
 GameViewportClientClassName=/Script/ZED.ZEDGameViewportClient
 LocalPlayerClassName=/Script/ZED.ZEDLocalPlayer
 NearClipPlane=1.000000
+bSmoothFrameRate=False
+bUseFixedFrameRate=False
+FixedFrameRate=45.000000
+SmoothedFrameRateRange=(LowerBound=(Type=Inclusive,Value=22.000000),UpperBound=(Type=Exclusive,Value=45.000000))
+
+[/Script/HardwareTargeting.HardwareTargetingSettings]
+TargetedHardwareClass=Desktop
+AppliedTargetedHardwareClass=Desktop
+DefaultGraphicsPerformance=Scalable
+AppliedDefaultGraphicsPerformance=Scalable
 
 [/Script/Engine.RendererSettings]
 r.TextureStreaming=False
 r.AllowStaticLighting=False
-r.SeparateTranslucency=False
-r.DBuffer=False
+r.CustomDepth=0
 r.DefaultFeature.AmbientOcclusion=False
 r.DefaultFeature.AmbientOcclusionStaticFraction=False
 r.DefaultFeature.AutoExposure=False
 r.DefaultFeature.MotionBlur=False
 r.DefaultFeature.AntiAliasing=1
-r.CustomDepth=0
 r.EarlyZPass=0
 r.HZBOcclusion=0
 r.MotionBlurQuality=0
@@ -26,7 +37,7 @@ r.PostProcessAAQuality=3
 r.BloomQuality=1
 r.EyeAdaptationQuality=0
 r.AmbientOcclusionLevels=0
-r.SSR.Quality=1
+r.SSR.Quality=0
 r.DepthOfFieldQuality=0
 r.SceneColorFormat=2
 r.TranslucencyVolumeBlur=0
@@ -39,6 +50,19 @@ r.SSR.MaxRoughness=0.1
 r.rhicmdbypass=0
 sg.EffectsQuality=2
 sg.PostProcessQuality=0
+r.DBuffer=False
+r.ForwardShading=False
+r.VertexFoggingForOpaque=True
+r.Shadow.UnbuiltPreviewInGame=True
+r.SeparateTranslucency=False
+
+[/Script/Engine.RecastNavMesh]
+RuntimeGeneration=Dynamic
+bSortNavigationAreasByCost=False
+bDrawPolyEdges=True
+TileSizeUU=544.000000
+CellSize=1.000000
+DrawOffset=10.000000
 
 [/Script/Engine.PhysicsSettings]
 DefaultGravityZ=-980.000000
@@ -80,5 +104,4 @@ SyncSceneSmoothingFactor=0.000000
 AsyncSceneSmoothingFactor=0.990000
 InitialAverageFrameRate=0.016667
 PhysXTreeRebuildRate=10
-
 

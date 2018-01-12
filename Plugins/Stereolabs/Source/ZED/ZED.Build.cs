@@ -10,10 +10,16 @@ public class ZED : ModuleRules
         get { return ModuleDirectory; }
     }
 
-    public string ProjectConfigPathDirectory
+    public string ProjectSavedConfigPathDirectory
     {
         get { return Path.GetFullPath(Path.Combine(ModulePath, "../../../../Saved/Config/ZED/")); }
     }
+
+    public string ProjectConfigPathDirectory
+    {
+        get { return Path.GetFullPath(Path.Combine(ModulePath, "../../../../Config/")); }
+    }
+
 
     public ZED(ReadOnlyTargetRules Target) : base(Target)
     {
@@ -69,15 +75,27 @@ public class ZED : ModuleRules
 
         string ZedConfigFileName = "ZED.ini";
         string CameraConfigFileName = "Camera.ini";
+        string DefaultEngineConfigFileName = "DefaultEngine.ini";
 
-        // Final path "/Saved/Config/ZED/"
-        string ZedConfigFilePath = ProjectConfigPathDirectory + ZedConfigFileName;
-        string CameraConfigFilePath = ProjectConfigPathDirectory + CameraConfigFileName;
+        string ZedConfigFilePath = ProjectSavedConfigPathDirectory + ZedConfigFileName;
+        string CameraConfigFilePath = ProjectSavedConfigPathDirectory + CameraConfigFileName;
+        string DefaultEngineConfigFilePath = ProjectConfigPathDirectory + DefaultEngineConfigFileName;
 
-        // Create directory if it does not exist
+        // Set default engine settings
         if (!Directory.Exists(ProjectConfigPathDirectory))
         {
             Directory.CreateDirectory(ProjectConfigPathDirectory);
+        }
+
+        if(!File.Exists(DefaultEngineConfigFilePath))
+        {
+            File.Copy(Path.Combine(ModulePath, "Defaults", DefaultEngineConfigFileName), DefaultEngineConfigFilePath, true);
+        }
+
+        // Set default SDK settings
+        if (!Directory.Exists(ProjectSavedConfigPathDirectory))
+        {
+            Directory.CreateDirectory(ProjectSavedConfigPathDirectory);
         }
 
         // Copy files if they don't exist

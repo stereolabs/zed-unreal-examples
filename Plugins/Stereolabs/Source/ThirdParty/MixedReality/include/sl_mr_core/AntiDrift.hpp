@@ -1,3 +1,5 @@
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
 #ifndef __ANTIDRIFT_H__
 #define __ANTIDRIFT_H__
 

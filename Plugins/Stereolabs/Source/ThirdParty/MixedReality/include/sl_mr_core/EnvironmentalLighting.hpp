@@ -1,4 +1,7 @@
-#pragma once
+//======= Copyright (c) Stereolabs Corporation, All rights reserved. ===============
+
+#ifndef __ENVLIGHT_H__
+#define __ENVLIGHT_H__
 
 #include "sl_mr_core/defines.hpp"
 
@@ -39,4 +42,4 @@ namespace sl {
 	}
 }
 
-
+#endif // __ENVLIGHT_H__
