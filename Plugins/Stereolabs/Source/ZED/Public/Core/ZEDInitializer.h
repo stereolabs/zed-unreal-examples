@@ -18,7 +18,6 @@ class ZED_API AZEDInitializer : public AActor
 
 public:
 	AZEDInitializer();
-	~AZEDInitializer();
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -110,10 +109,6 @@ public:
 	/** Load camera settings at runtime from config file and override preset  */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zed")
 	uint8 bLoadCameraSettingsFromConfigFile:1;
-
-	/** Enable pass through (i.e no depth and normals). Not loaded from config file */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zed")
-	uint8 bPassThrough:1;
 
 	/*
 	 * Use the HMD transform as tracking origin, else the HMD tracking origin is reset.

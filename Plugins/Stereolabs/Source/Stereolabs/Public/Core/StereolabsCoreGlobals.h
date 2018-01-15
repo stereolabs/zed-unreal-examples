@@ -303,8 +303,6 @@ namespace sl
 					return ESlErrorCode::EC_CameraDetectionIssue;
 				case sl::ERROR_CODE::ERROR_CODE_CAMERA_ALREADY_IN_USE:
 					return ESlErrorCode::EC_CameraAlreadyInUse;
-				case sl::ERROR_CODE::ERROR_CODE_DEPTH_MODE_NOT_AVAILABLE:
-					return ESlErrorCode::EC_DepthModeNotAvailable;
 				case sl::ERROR_CODE::ERROR_CODE_LAST:
 					return ESlErrorCode::EC_None;
 				default:
@@ -769,8 +767,6 @@ namespace sl
 					return sl::ERROR_CODE::ERROR_CODE_CAMERA_DETECTION_ISSUE;
 				case ESlErrorCode::EC_CameraAlreadyInUse:
 					return sl::ERROR_CODE::ERROR_CODE_CAMERA_ALREADY_IN_USE;
-				case ESlErrorCode::EC_DepthModeNotAvailable:
-					return sl::ERROR_CODE::ERROR_CODE_DEPTH_MODE_NOT_AVAILABLE;
 				case ESlErrorCode::EC_None:
 					return sl::ERROR_CODE::ERROR_CODE_LAST;
 				default:

@@ -34,7 +34,6 @@ class SPATIALMAPPING_API ASpatialMappingManager : public AActor
 
 public:
 	ASpatialMappingManager();
-	~ASpatialMappingManager();
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

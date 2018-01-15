@@ -29,17 +29,12 @@ AZEDInitializer::AZEDInitializer()
 	:
 	bLoadParametersFromConfigFile(false),
 	bLoadCameraSettingsFromConfigFile(false),
-	bPassThrough(false),
 	bUseHMDTrackingAsOrigin(false)
 {
 	if (InitParameters.VerboseFilePath.IsEmpty())
 	{
 		InitParameters.VerboseFilePath = DEFAULT_VERBOSE_FILE_PATH;
 	}
-}
-
-AZEDInitializer::~AZEDInitializer()
-{
 }
 
 #if WITH_EDITOR
@@ -70,7 +65,7 @@ bool AZEDInitializer::CanEditChange(const UProperty* InProperty) const
 				return false;
 			}
 
-			return !bPassThrough;
+			return true;
 		}
 	}
 
@@ -91,7 +86,7 @@ bool AZEDInitializer::CanEditChange(const UProperty* InProperty) const
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(FSlInitParameters, DepthMode))
 	{
-		return !bPassThrough;
+		return RuntimeParameters.bEnableDepth;
 	}
 
 	if(PropertyName == GET_MEMBER_NAME_CHECKED(FSlTrackingParameters, Location) || 

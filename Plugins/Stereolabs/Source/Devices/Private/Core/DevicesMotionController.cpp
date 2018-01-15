@@ -14,20 +14,17 @@ ADevicesMotionController::ADevicesMotionController()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	DefaultSceneRoot = CreateDefaultSubobject<USceneComponent>("DefaultSceneRoot");
-	RootComponent = DefaultSceneRoot;
+	RootComponent = CreateDefaultSubobject<USceneComponent>("RootComponent");
 
 	MotionController = CreateDefaultSubobject<UMotionControllerComponent>("MotionController");
 	MotionController->bDisableLowLatencyUpdate = true;
-	MotionController->AttachToComponent(DefaultSceneRoot, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
+	MotionController->SetCanEverAffectNavigation(false);
+	MotionController->SetupAttachment(RootComponent);
 
 	AddTickPrerequisiteComponent(MotionController);
 
-	TransformBuffer.Reserve(LatencyTime + 1);
+	TransformBuffer.Reserve(LatencyTime);
 }
-
-ADevicesMotionController::~ADevicesMotionController()
-{}
 
 void ADevicesMotionController::BeginPlay()
 {
@@ -62,7 +59,11 @@ void ADevicesMotionController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ADevicesMotionController::Tick(float DeltaTime)
 {
-	SetActorTransform(GetTransform());
+	FTransform Transform;
+	if (GetTransform(Transform))
+	{
+		SetActorTransform(Transform);
+	}
 
 	Super::Tick(DeltaTime);
 }
@@ -76,6 +77,8 @@ void ADevicesMotionController::Start()
 
 	UZEDFunctionLibrary::GetCameraActor(this)->OnCameraActorInitialized.RemoveDynamic(this, &ADevicesMotionController::Start);
 	
+	UpdateTransformBuffer();
+
 	GetWorldTimerManager().SetTimer(TimerHandle, this, &ADevicesMotionController::UpdateTransformBuffer, 0.001f, true);
 	SetActorTickEnabled(true);
 }
@@ -88,33 +91,34 @@ void ADevicesMotionController::Stop()
 
 FTransform ADevicesMotionController::GetDelayedTransform()
 {
-	if (TransformBuffer.Num())
-	{
-		return TransformBuffer[0];
-	}
-	else
-	{
-		return FTransform(FRotator::ZeroRotator, FVector::ZeroVector, FVector(1, 1, 1));
-	}
+	return TransformBuffer[0];
 }
 
 void ADevicesMotionController::UpdateTransformBuffer()
 {
 	check(MotionController);
 
-	TransformBuffer.Add(MotionController->GetRelativeTransform());
-	if (TransformBuffer.Num() > LatencyTime)
+	if (TransformBuffer.Num() + 1 > LatencyTime)
 	{
 		TransformBuffer.RemoveAt(0, 1, false);
 	}
+
+	TransformBuffer.Add(MotionController->GetRelativeTransform());
 }
 
-FTransform ADevicesMotionController::GetTransform()
+bool ADevicesMotionController::GetTransform(FTransform& Transform)
 {
 	FZEDTrackingData TrackingData = UZEDFunctionLibrary::GetTrackingData();
 	FTransform DelayedTransform = GetDelayedTransform();
 	sl::Transform SlLatencyTransform;
-	sl::mr::latencyCorrectorGetTransform(GSlCameraProxy->GetCamera().getTimestamp(sl::TIME_REFERENCE::TIME_REFERENCE_CURRENT) - sl::timeStamp(LatencyTime * 1000000), SlLatencyTransform, false);
 
-	return (DelayedTransform * sl::unreal::ToUnrealType(SlLatencyTransform).Inverse()) * TrackingData.OffsetZedWorldTransform;
+	bool bTransform = sl::mr::latencyCorrectorGetTransform(GSlCameraProxy->GetCamera().getTimestamp(sl::TIME_REFERENCE::TIME_REFERENCE_CURRENT) - sl::timeStamp(LatencyTime * 1000000), SlLatencyTransform, false);
+	if (!bTransform)
+	{
+		return false;
+	}
+
+	Transform = (DelayedTransform * sl::unreal::ToUnrealType(SlLatencyTransform).Inverse()) * TrackingData.OffsetZedWorldTransform;
+
+	return true;
 }

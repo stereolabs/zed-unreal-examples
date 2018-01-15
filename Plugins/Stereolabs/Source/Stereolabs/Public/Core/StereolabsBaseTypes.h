@@ -317,7 +317,6 @@ enum class ESlErrorCode : uint8
 	EC_IncompatibleAreaFile		   UMETA(DisplayName = "Incompatible area file"),
 	EC_CameraDetectionIssue		   UMETA(DisplayName = "Camera detection issue"),
 	EC_CameraAlreadyInUse		   UMETA(DisplayName = "Camera used by another process"),
-	EC_DepthModeNotAvailable	   UMETA(DisplayName = "Depth mode not available"),
 	// ERROR_CODE_LAST
 	EC_None					  	   UMETA(DisplayName = "No error") 
 };

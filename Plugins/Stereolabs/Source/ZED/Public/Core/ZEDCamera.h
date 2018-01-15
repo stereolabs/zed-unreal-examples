@@ -214,11 +214,6 @@ private:
 	void CreateRightTextures(bool bCreateColorTexture = true);
 
 	/*
-	 * Called from timer to correct plane anti drift
-	 */
-	void PlanesAntiDrift_Internal();
-
-	/*
 	 * Initialize the drift corrector
 	 */
 	bool InitializeDriftCorrectorConstOffset(const FVector& HMDLocation, const FRotator& HMDRotation);
@@ -398,7 +393,4 @@ private:
 
 	/** True if initialized */
 	uint8 bInit:1;
-
-	/** True if drift corrector initialized */
-	uint8 bDriftCorrectorInitialized:1;
 };

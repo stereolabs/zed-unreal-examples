@@ -65,15 +65,6 @@ AZEDPawn::AZEDPawn()
 	AutoPossessPlayer = EAutoReceiveInput::Disabled;
 }
 
-AZEDPawn::~AZEDPawn()
-{
-}
-
-void AZEDPawn::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
 void AZEDPawn::ZedCameraTrackingUpdated(const FZEDTrackingData& NewTrackingData)
 {
 	SetActorTransform(NewTrackingData.OffsetZedWorldTransform);

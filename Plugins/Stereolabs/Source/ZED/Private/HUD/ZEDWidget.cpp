@@ -6,12 +6,7 @@
 
 UZEDWidget::UZEDWidget()
 {
-	// Unique name
-	static int32 Count = 0;
-	FString Name("WidgetComponent_");
-	Name.AppendInt(++Count);
-
-	WidgetComponent = CreateDefaultSubobject<UZEDWidgetComponent>(*Name);
+	WidgetComponent = CreateDefaultSubobject<UZEDWidgetComponent>(MakeUniqueObjectName(this, UZEDWidgetComponent::StaticClass(), "WidgetComponent"));
 	WidgetComponent->SetupAttachment(this);
 }
 

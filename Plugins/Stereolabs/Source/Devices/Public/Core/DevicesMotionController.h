@@ -15,7 +15,6 @@ class DEVICES_API ADevicesMotionController : public AActor
 
 public:
 	ADevicesMotionController();
-	~ADevicesMotionController();
 
 protected:
 	virtual void BeginPlay() override;
@@ -32,23 +31,23 @@ private:
 private:
 	/*
 	 * Get the motion controller transform delayed of "LatencyTime" milliseconds 
-	 * @return ControllerDelayedTransform The transform
+	 * @return The transform
 	 */
 	FTransform GetDelayedTransform();
 
 	/** Function called by the timer. It add a new motion controller transform to the buffer and remove the old one if we have enough */
 	void UpdateTransformBuffer();
 
-	/** */
-	FTransform GetTransform();
+	/*
+	 * Get the transform of the motion controller relative to the ZED
+	 * @param Transform The out transform
+	 * @return True if the transform is valid
+	 */
+	bool GetTransform(FTransform& Transform);
 
 public:
 	/** MotionController */
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	USceneComponent* DefaultSceneRoot;
-
-	/** MotionController */
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Instanced)
 	UMotionControllerComponent* MotionController;
 
 private:
@@ -56,7 +55,7 @@ private:
 	int32 LatencyTime;
 
 	/** Buffer containing previous controller transforms (one transform each frame) */
-	TArray<FTransform, TFixedAllocator<26>> TransformBuffer;
+	TArray<FTransform, TFixedAllocator<25>> TransformBuffer;
 
 	/** Update transform timer handle */
 	FTimerHandle TimerHandle;

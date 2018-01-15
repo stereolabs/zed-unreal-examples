@@ -17,10 +17,6 @@ ASpatialMappingManager::ASpatialMappingManager()
 	PrimaryActorTick.TickGroup = ETickingGroup::TG_PrePhysics;
 }
 
-ASpatialMappingManager::~ASpatialMappingManager()
-{
-}
-
 void ASpatialMappingManager::BeginPlay()
 {
 	Super::BeginPlay();

@@ -405,16 +405,13 @@ void AZEDPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 UObject* AZEDPlayerController::SpawnPawn(UClass* NewPawnClass, bool bPossess)
 {
 	// Spawn pawn
-	APawn* SpawnedPawn = Cast<APawn>(GetWorld()->SpawnActor(NewPawnClass));
-
-	// Set zed pawn
-	ZedPawn = Cast<AZEDPawn>(SpawnedPawn);
+	ZedPawn = Cast<AZEDPawn>(GetWorld()->SpawnActor(NewPawnClass));
 
 	checkf(ZedPawn, TEXT("NewPawnClass must inherit from AZedPawn"));
 
 	if (bPossess)
 	{
-		Possess(SpawnedPawn);
+		Possess(ZedPawn);
 	}
 
 	OnPawnSpawned.Broadcast();
@@ -553,14 +550,6 @@ void AZEDPlayerController::Internal_OpenZedCamera()
 		ZedPawn->ZedErrorWidget->WidgetComponent->SetGeometryMode(EWidgetGeometryMode::Plane);
 		ZedPawn->ZedErrorWidget->SetWorldScale3D(FVector(0.3f));
 	}
-	/*else
-	{
-		ZedPawn->ZedLoadingWidget->bAbsoluteLocation = true;
-		ZedPawn->ZedLoadingWidget->bAbsoluteRotation = true;
-
-		ZedPawn->ZedErrorWidget->bAbsoluteLocation = true;
-		ZedPawn->ZedErrorWidget->bAbsoluteRotation = true;
-	}*/
 
 	// Get Zed initializer object
 	TArray<AActor*> ZedInitializer;
@@ -601,12 +590,6 @@ void AZEDPlayerController::Internal_OpenZedCamera()
 void AZEDPlayerController::ZedCameraOpened()
 {
 	GetWorldTimerManager().ClearTimer(CameraOpeningTimerHandle);
-
-	if (!bHMDEnabled)
-	{
-		SetWidgetInFrontOfCamera(ZedPawn->ZedLoadingWidget);
-		SetWidgetInFrontOfCamera(ZedPawn->ZedErrorWidget);
-	}
 
 	// Set fade post process
 	ZedPawn->Camera->AddOrUpdateBlendable(PostProcessFadeMaterialInstanceDynamic, 1.0f);
@@ -904,40 +887,6 @@ void AZEDPlayerController::OnRep_ZedPawn()
 	OnPawnSpawned.Broadcast();
 }
 
-void AZEDPlayerController::SetWidgetInFrontOfCamera(UZEDWidget* Widget)
-{
-	/*FRotator CameraRotation = ZedPawn->Camera->GetComponentRotation();
-
-	if (bHMDEnabled)
-	{
-		FTransform LocalTransform(FRotator(0, 180, 0), FVector(300, 0, 0));
-		FTransform CameraTransform = ZedPawn->Camera->GetComponentToWorld();
-		CameraTransform.SetRotation(FRotator(0.0f, CameraTransform.Rotator().Yaw, 0.0).Quaternion());
-		FTransform FinalTransform = LocalTransform * CameraTransform;
-
-		//FVector Location = ZedPawn->Camera->GetComponentLocation() + UKismetMathLibrary::GetForwardVector(FRotator(0.0f, CameraRotation.Yaw, 0.0f)) * 300.0f;
-		Widget->SetWorldLocation(FinalTransform.GetLocation());
-
-		//FRotator Rotation = FRotator(0.0f, CameraRotation.Yaw, 0) + FRotator(0.0f, 180.0f, 0.0f);
-		FRotator FinalRotation = FinalTransform.Rotator();
-		FinalRotation.Roll = 0.0f;
-		FinalRotation.Pitch = 0.0f;
-		Widget->SetWorldRotation(FinalRotation);
-	}
-	else
-	{
-		FVector Location = FVector(300.0f, 0.0f, 0.0f);
-
-		if (GSlCameraProxy->IsCameraOpened())
-		{
-			Location = UZEDFunctionLibrary::GetCustomLocationInFrontOfPlayer(ZedPawn->Camera->GetComponentLocation(), FRotator(0.0f, CameraRotation.Yaw, 0.0f), 300.0f);
-		}
-
-		Widget->SetRelativeLocation(Location);
-		Widget->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
-	}*/
-}
-
 void AZEDPlayerController::FadeOutToGame()
 {
 	FadeOut();
@@ -951,10 +900,6 @@ void AZEDPlayerController::UpdateHUDOpeningZed_Implementation()
 	ZedPawn->ZedLoadingWidget->SetText(FText::FromString("Searching for ZED camera"));
 #endif
 	ZedPawn->ZedLoadingWidget->SetVisibility(true);
-
-	SetWidgetInFrontOfCamera(ZedPawn->ZedLoadingWidget);
-	SetWidgetInFrontOfCamera(ZedPawn->ZedErrorWidget);
-
 	ZedPawn->ZedLoadingWidget->FadeIn();
 }
 
@@ -1018,8 +963,6 @@ void AZEDPlayerController::UpdateHUDZedDisconnected_Implementation()
 	ZedPawn->ZedErrorWidget->SetText(FText::FromString(USlFunctionLibrary::ErrorCodeToString(ESlErrorCode::EC_CameraNotDetected)));
 	ZedPawn->ZedErrorWidget->SetVisibility(true);
 	ZedPawn->ZedErrorWidget->FadeIn();
-
-	SetWidgetInFrontOfCamera(ZedPawn->ZedErrorWidget);
 }
 
 void AZEDPlayerController::AddShowOnlyComponent(UPrimitiveComponent* InComponent)

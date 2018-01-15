@@ -29,7 +29,6 @@ class SPATIALMAPPING_API ASpatialMappingCubemapManager : public AActor
 
 public:
 	ASpatialMappingCubemapManager();
-	~ASpatialMappingCubemapManager();
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

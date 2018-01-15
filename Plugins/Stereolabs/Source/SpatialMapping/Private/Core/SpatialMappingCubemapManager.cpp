@@ -22,10 +22,6 @@ ASpatialMappingCubemapManager::ASpatialMappingCubemapManager()
 	Camera->bCaptureOnMovement = false;
 }
 
-ASpatialMappingCubemapManager::~ASpatialMappingCubemapManager()
-{
-}
-
 void ASpatialMappingCubemapManager::BeginPlay()
 {
 	Super::BeginPlay();

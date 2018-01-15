@@ -230,11 +230,6 @@ private:
 	void Internal_InitializeZedCameraActor();
 
 	/*
-	 * Place a widget in front of the camera
-	 */
-	void SetWidgetInFrontOfCamera(UZEDWidget* Widget);
-
-	/*
 	 * Fade out to game
 	 */
 	void FadeOutToGame();

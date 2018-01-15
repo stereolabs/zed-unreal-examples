@@ -21,9 +21,6 @@ class ZED_API AZEDPawn : public APawn
 
 public:
 	AZEDPawn();
-	~AZEDPawn();
-
-	virtual void BeginPlay() override;
 
 private:
 	/*

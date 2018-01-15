@@ -37,10 +37,8 @@ AZEDCamera::AZEDCamera()
 	bPositionalTrackingInitialized(false),
 	bHMDHasTrackers(false),
 	bCurrentDepthEnabled(false),
-	bPassThrough(false),
 	bUseHMDTrackingAsOrigin(false),
 	bInit(false),
-	bDriftCorrectorInitialized(false),
 	HMDRenderPlaneDistance(1000.0f),
 	HMDCameraOffset(-20000.0f),
 	RenderingMode(ESlRenderingMode::RM_None),
@@ -158,7 +156,7 @@ bool AZEDCamera::CanEditChange(const UProperty* InProperty) const
 				return false;
 			}
 
-			return !bPassThrough;
+			return true;
 		}
 	}
 
@@ -193,11 +191,6 @@ bool AZEDCamera::CanEditChange(const UProperty* InProperty) const
 		return InitParameters.bUseSVO;
 	}
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(AZEDCamera, bPassThrough))
-	{
-		return false;
-	}
-
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(FSlRenderingParameters, ThreadingMode))
 	{
 		return !InitParameters.bUseSVO;
@@ -210,7 +203,7 @@ bool AZEDCamera::CanEditChange(const UProperty* InProperty) const
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(AZEDCamera, bUseHMDTrackingAsOrigin))
 	{
-		return !GSlCameraProxy->bTrackingEnabled && UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled();
+		return UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled();
 	}
 
 	return Super::CanEditChange(InProperty);
@@ -297,7 +290,7 @@ void AZEDCamera::Tick(float DeltaSeconds)
 		// Update HMD planes location
 		SetHMDPlanesLocation(HMDLocation);
 
-		if (bUpdateTracking && bDriftCorrectorInitialized)
+		if (bUpdateTracking)
 		{
 			// Initialize drift corrector if failed because out of tracking area
 			InitializeDriftCorrectorConstOffset(HMDLocation, HMDRotation);
@@ -334,54 +327,52 @@ void AZEDCamera::Tick(float DeltaSeconds)
 		OnTrackingDataUpdated.Broadcast(TrackingData);
 	}
 
-	if (!bPassThrough)
+
+	// Depth texture quality, normals will have the same size for performance purpose
+	int32 GDepthTextureSizePreset = CVarZEDDepthTextureQualityPreset.GetValueOnGameThread();
+	if (CurrentDepthTextureQualityPreset != GDepthTextureSizePreset)
 	{
-		// Depth texture quality, normals will have the same size for performance purpose
-		int32 GDepthTextureSizePreset = CVarZEDDepthTextureQualityPreset.GetValueOnGameThread();
-		if (CurrentDepthTextureQualityPreset != GDepthTextureSizePreset)
+		CurrentDepthTextureQualityPreset = GDepthTextureSizePreset;
+
+		if (bCurrentDepthEnabled)
 		{
-			CurrentDepthTextureQualityPreset = GDepthTextureSizePreset;
+			FVector2D DepthSize = GetSlTextureSizeFromPreset(CurrentDepthTextureQualityPreset);
 
-			if (bCurrentDepthEnabled)
+			// Left depth
+			Batch->RemoveTexture(LeftEyeDepth);
+			LeftEyeDepth->Resize(DepthSize.X, DepthSize.Y);
+			Batch->AddTexture(LeftEyeDepth);
+
+			// Left normals
+			Batch->RemoveTexture(LeftEyeNormals);
+			LeftEyeNormals->Resize(DepthSize.X, DepthSize.Y);
+			Batch->AddTexture(LeftEyeNormals);
+
+			ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Depth", LeftEyeDepth->Texture);
+			ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Normals", LeftEyeNormals->Texture);
+
+			if (RenderingMode == ESlRenderingMode::RM_Stereo)
 			{
-				FVector2D DepthSize = GetSlTextureSizeFromPreset(CurrentDepthTextureQualityPreset);
+				// Right depth
+				Batch->RemoveTexture(RightEyeDepth);
+				RightEyeDepth->Resize(DepthSize.X, DepthSize.Y);
+				Batch->AddTexture(RightEyeDepth);
 
-				// Left depth
-				Batch->RemoveTexture(LeftEyeDepth);
-				LeftEyeDepth->Resize(DepthSize.X, DepthSize.Y);
-				Batch->AddTexture(LeftEyeDepth);
+				// Right normals
+				Batch->RemoveTexture(RightEyeNormals);
+				RightEyeNormals->Resize(DepthSize.X, DepthSize.Y);
+				Batch->AddTexture(RightEyeNormals);
 
-				// Left normals
-				Batch->RemoveTexture(LeftEyeNormals);
-				LeftEyeNormals->Resize(DepthSize.X, DepthSize.Y);
-				Batch->AddTexture(LeftEyeNormals);
-
-				ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Depth", LeftEyeDepth->Texture);
-				ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Normals", LeftEyeNormals->Texture);
-
-				if (RenderingMode == ESlRenderingMode::RM_Stereo)
-				{
-					// Right depth
-					Batch->RemoveTexture(RightEyeDepth);
-					RightEyeDepth->Resize(DepthSize.X, DepthSize.Y);
-					Batch->AddTexture(RightEyeDepth);
-
-					// Right normals
-					Batch->RemoveTexture(RightEyeNormals);
-					RightEyeNormals->Resize(DepthSize.X, DepthSize.Y);
-					Batch->AddTexture(RightEyeNormals);
-
-					ZedRightEyeMaterialInstanceDynamic->SetTextureParameterValue("Depth", RightEyeDepth->Texture);
-					ZedRightEyeMaterialInstanceDynamic->SetTextureParameterValue("Normals", RightEyeNormals->Texture);
-				}
+				ZedRightEyeMaterialInstanceDynamic->SetTextureParameterValue("Depth", RightEyeDepth->Texture);
+				ZedRightEyeMaterialInstanceDynamic->SetTextureParameterValue("Normals", RightEyeNormals->Texture);
 			}
-#if WITH_EDITOR
-			else
-			{
-				ZED_CAMERA_LOG_E("Resizing depth and normal without depth enabled in runtime parameters");
-			}
-#endif
 		}
+#if WITH_EDITOR
+		else
+		{
+			ZED_CAMERA_LOG_E("Resizing depth and normal without depth enabled in runtime parameters");
+		}
+#endif
 
 		// Depth retrieve toggle
 		if (bCurrentDepthEnabled != RuntimeParameters.bEnableDepth)
@@ -506,7 +497,7 @@ void AZEDCamera::CreateLeftTextures(bool bCreateColorTexture/* = true*/)
 		LeftEyeColor = USlViewTexture::CreateGPUViewTexture("LeftEyeColor", Resolution.X, Resolution.Y, ESlView::V_Left, true, ESlTextureFormat::TF_B8G8R8A8_UNORM);
 	}
 
-	if (RuntimeParameters.bEnableDepth && !bPassThrough)
+	if (RuntimeParameters.bEnableDepth)
 	{
 		FIntPoint TextureSize = GetSlTextureSizeFromPreset(CurrentDepthTextureQualityPreset);
 
@@ -524,7 +515,7 @@ void AZEDCamera::CreateRightTextures(bool bCreateColorTexture/* = true*/)
 		RightEyeColor = USlViewTexture::CreateGPUViewTexture("RightEyeColor", Resolution.X, Resolution.Y, ESlView::V_Right, true, ESlTextureFormat::TF_B8G8R8A8_UNORM);
 	}
 
-	if (RuntimeParameters.bEnableDepth && !bPassThrough)
+	if (RuntimeParameters.bEnableDepth)
 	{
 		FIntPoint TextureSize = GetSlTextureSizeFromPreset(CurrentDepthTextureQualityPreset);
 
@@ -593,17 +584,7 @@ void AZEDCamera::ResetTrackingOrigin()
 	// If using an HMD, reset SDK tracking with current HMD tracking
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
-		if (!bUseHMDTrackingAsOrigin)
-		{
-			sl::mr::driftCorrectorSetTrackingOffsetTransfrom(sl::unreal::ToSlType(FTransform(TrackingParameters.Rotation, TrackingParameters.Location)));
-		}
-
-		bPositionalTrackingInitialized = false;
-
-		FVector HMDLocation;
-		FRotator HMDRotation;
-		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
-		InitializeDriftCorrectorConstOffset(HMDLocation, HMDRotation);
+		InitHMDTrackingData();
 	}
 	else
 	{
@@ -616,11 +597,6 @@ void AZEDCamera::SaveSpatialMemoryArea()
 	GSlCameraProxy->SaveSpatialMemoryArea(TrackingParameters.SpatialMemoryFileSavingPath);
 }
 
-void AZEDCamera::PlanesAntiDrift_Internal()
-{
-	CorrectHMDPlanesDrift();
-}
-
 void AZEDCamera::InitializeParameters(AZEDInitializer* ZedInitializer, bool bHMDEnabled)
 {
 	TrackingParameters = ZedInitializer->TrackingParameters;
@@ -630,7 +606,6 @@ void AZEDCamera::InitializeParameters(AZEDInitializer* ZedInitializer, bool bHMD
 	AntiDriftParameters = ZedInitializer->AntiDriftParameters;
 	CameraSettings = ZedInitializer->CameraSettings;
 	SVOParameters = ZedInitializer->SVOParameters;
-	bPassThrough = ZedInitializer->bPassThrough;
 	bUseHMDTrackingAsOrigin = ZedInitializer->bUseHMDTrackingAsOrigin;
 
 	bCurrentDepthEnabled = RuntimeParameters.bEnableDepth;
@@ -646,14 +621,6 @@ void AZEDCamera::InitializeParameters(AZEDInitializer* ZedInitializer, bool bHMD
 	{
 		TrackingParameters.Location = FVector::ZeroVector;
 		TrackingParameters.Rotation = FRotator::ZeroRotator;
-	}
-
-	if (ZedInitializer->bPassThrough)
-	{
-		InitParameters.DepthMode = ESlDepthMode::DM_None;
-
-		RuntimeParameters.bEnableDepth = false;
-		RuntimeParameters.bEnablePointCloud = false;
 	}
 
 	if (bHMDEnabled)
@@ -703,21 +670,15 @@ void AZEDCamera::Init(bool bHMDEnabled)
 
 	CreateLeftTextures();
 	ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Color", LeftEyeColor->Texture);
-	if (!bPassThrough)
-	{
-		ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Depth", LeftEyeDepth->Texture);
-		ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Normals", LeftEyeNormals->Texture);
-	}
+	ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Depth", LeftEyeDepth->Texture);
+	ZedLeftEyeMaterialInstanceDynamic->SetTextureParameterValue("Normals", LeftEyeNormals->Texture);
 
 	Batch->AddTexture(LeftEyeColor);
 
 	if (!bHMDEnabled)
 	{
-		if (!bPassThrough)
-		{
-			Batch->AddTexture(LeftEyeDepth);
-			Batch->AddTexture(LeftEyeNormals);
-		}
+		Batch->AddTexture(LeftEyeDepth);
+		Batch->AddTexture(LeftEyeNormals);
 	}
 	else
 	{
@@ -732,7 +693,7 @@ void AZEDCamera::Init(bool bHMDEnabled)
 
 		CreateRightTextures();
 		ZedRightEyeMaterialInstanceDynamic->SetTextureParameterValue("Color", RightEyeColor->Texture);
-		if (!bPassThrough)
+		if (bCurrentDepthEnabled)
 		{
 			ZedRightEyeMaterialInstanceDynamic->SetTextureParameterValue("Depth", RightEyeDepth->Texture);
 			ZedRightEyeMaterialInstanceDynamic->SetTextureParameterValue("Normals", RightEyeNormals->Texture);
@@ -740,7 +701,7 @@ void AZEDCamera::Init(bool bHMDEnabled)
 
 		Batch->AddTexture(LeftEyeColor);
 		Batch->AddTexture(RightEyeColor);
-		if (!bPassThrough)
+		if (bCurrentDepthEnabled)
 		{
 			Batch->AddTexture(LeftEyeDepth);
 			Batch->AddTexture(RightEyeDepth);
@@ -818,6 +779,10 @@ void AZEDCamera::InitHMDTrackingData()
 	{
 		sl::mr::driftCorrectorSetTrackingOffsetTransfrom(sl::unreal::ToSlType(FTransform(TrackingParameters.Rotation, TrackingParameters.Location)));
 	}
+	else
+	{
+		sl::mr::driftCorrectorSetTrackingOffsetTransfrom(sl::unreal::ToSlType(FTransform()));
+	}
 
 	bHMDHasTrackers = (UHeadMountedDisplayFunctionLibrary::GetNumOfTrackingSensors() > 0);
 
@@ -825,8 +790,6 @@ void AZEDCamera::InitHMDTrackingData()
 	FRotator HMDRotation;
 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(HMDRotation, HMDLocation);
 	InitializeDriftCorrectorConstOffset(HMDLocation, HMDRotation);
-
-	bDriftCorrectorInitialized = true;
 }
 
 bool AZEDCamera::InitializeDriftCorrectorConstOffset(const FVector& HMDLocation, const FRotator& HMDRotation)
