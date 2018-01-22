@@ -1,7 +1,7 @@
-# ZED Unreal Samples
-This repository contains Unreal sample projects that demonstrate the Mixed reality features offered by the [ZED Unreal Plugin](https://github.com/stereolabs/zed-unreal-plugin).
+# Stereolabs ZED - UE4 Samples
 
-The `ZED Unreal Plugin` is already integrated in the samples, the only requirement is to install the dedicated [Unreal Engine version](https://github.com/stereolabs/UnrealEngine).
-Instructions can be found in the dedicated [documentation](https://www.stereolabs.com/documentation/mixed-reality/unreal/getting-started.html) and in the modified [Unreal Engine](https://github.com/stereolabs/UnrealEngine) repository.
+This repository contains Unreal sample projects that demonstrate how to create advanced Mixed Reality application using the ZED SDK and Unreal. 
 
-To use the samples, open the `ZEDSamples.uproject` file.
+To build and run the samples, you will need to download Stereolabs custom modification of the engine. Read the [documentation](https://www.stereolabs.com/documentation/mixed-reality/unreal/getting-started.html) to learn how.
+
+To open the samples project, use the 'ZEDSamples.uproject' file.
