@@ -12,14 +12,15 @@ EHMDType USamplesBlueprintFunctionLibrary::GetHMDType()
 	{
 		if (GEngine->StereoRenderingDevice.IsValid())
 		{
-			EHMDDeviceType::Type Type = GEngine->XRSystem->GetHMDDevice()->GetHMDDeviceType();
+			FName Type = GEngine->XRSystem->GetSystemName();
 
-			switch (Type)
+			if (Type == TEXT("OculusHMD"))
 			{
-				case EHMDDeviceType::DT_OculusRift:
-					return EHMDType::T_Oculus;
-				case EHMDDeviceType::DT_SteamVR:
-					return EHMDType::T_Vive;
+				return EHMDType::T_Oculus;
+			}
+			else if (Type == TEXT("SteamVR"))
+			{
+				return EHMDType::T_Vive;
 			}
 		}
 	}

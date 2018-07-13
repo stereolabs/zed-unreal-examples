@@ -1,8 +1,5 @@
 # Stereolabs plugins
-Plugins/Stereolabs/Binaries/*
-Plugins/Stereolabs/Intermediate/*
-Plugins/Stereolabs/.git/*
-Plugins/Stereolabs/.gitignore
+Plugins/*
 
 #local folders
 *.vs
