@@ -1,0 +1,22 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{7B05A245-4A50-1943-B927-DC89AABBDDBD}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "PingPongMR",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "Stereolabs",
+			"Enabled": true
+		}
+	]
+}
