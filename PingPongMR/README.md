@@ -3,8 +3,7 @@
 Here you can find the full UE4 project of Stereolabs pingpong demo shown at the AWE2018 expo.
 A full video is available [here](https://www.youtube.com/watch?v=rfskhlS-XT0).
 
-[![](https://thumbs.gfycat.com/CreativeAmusingGentoopenguin-size_restricted.gif =520x293)](https://gfycat.com/CreativeAmusingGentoopenguin)
-
+<img src="https://thumbs.gfycat.com/CreativeAmusingGentoopenguin-size_restricted.gif" width="520"/>
 
 ## Installation
 
@@ -53,22 +52,21 @@ The controls differ slightly depending on your headset:
 
 Put on your headset and you'll see your real-world environment inside. Open the menu using the controls explained above. For now, click **Solo Mode.**
 
-[![](https://thumbs.gfycat.com/GenuineRichJapanesebeetle-size_restricted.gif =520x293)](https://gfycat.com/GenuineRichJapanesebeetle)
+<img src="https://thumbs.gfycat.com/GenuineRichJapanesebeetle-size_restricted.gif" width="520"/>
 
 The next options are **Target Practice** and **Versus AI**
 
 **Target Practice** is like the batting cages for ping pong. A machine will serve balls that you should return while aiming for a target on the other side. 
 
-[![](https://thumbs.gfycat.com/BossyValuableDiplodocus-size_restricted.gif =520x293)](https://gfycat.com/BossyValuableDiplodocus)
+<img src="https://thumbs.gfycat.com/BossyValuableDiplodocus-size_restricted.gif" width="520"/>
 
 **Versus AI** gives you a practice opponent to play with. Spawn a ball with your off-hand and hit it with your paddle hand, and the floating AI paddle will attempt to return it. 
 
-[![](https://thumbs.gfycat.com/HandmadeUnrealisticHamadryad-size_restricted.gif =520x293)](https://gfycat.com/HandmadeUnrealisticHamadryad)
+<img src="https://thumbs.gfycat.com/HandmadeUnrealisticHamadryad-size_restricted.gif" width="520"/>
 
 The first time you pick either option, you'll have to place the ping pong table in your environment. Aim where you want to place it with your headset. The table outline will turn from red to blue when it's in a valid location - pull the trigger to confirm its position. 
 
-[![](https://thumbs.gfycat.com/SeparateAdmirableIguanodon-size_restricted.gif =520x293)](https://gfycat.com/SeparateAdmirableIguanodon)
-
+<img src="https://thumbs.gfycat.com/SeparateAdmirableIguanodon-size_restricted.gif" width="520"/>
 
 ## Multiplayer
 
@@ -88,4 +86,4 @@ Both computers should also be on the same local network.
 
 Now you can start the game on both computers and select **Multiplayer** in the menu. Once the match has started, both players should see the table at the same place, and the virtual paddle in the other player's hand. If this is not the case, you should retry the previous steps for Vive multiplayer setup.
 
-[![](https://thumbs.gfycat.com/DefensiveGlossyHind-size_restricted.gif =520x293)](https://gfycat.com/DefensiveGlossyHind)
+<img src="https://thumbs.gfycat.com/DefensiveGlossyHind-size_restricted.gif" width="520"/>
