@@ -87,6 +87,5 @@ UPhysicalMaterial* UGameParameterLoader::ApplyPhysicalMaterialParameter(UPhysica
 {
 	physicalMaterial->Friction = friction;
 	physicalMaterial->Restitution = restitution;
-	physicalMaterial->UpdatePhysXMaterial();
 	return physicalMaterial;
 }
