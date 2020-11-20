@@ -80,10 +80,5 @@ Shows advanced ways to grab the ZED's image from the camera using two example Bl
 **PingPongMR** has additional equipment requirements for multiplayer, and has a more involved setup. See the readme file in the PingPongMR folder for instructions. 
 
 
-
-
-
-
-
-
-
+## Support
+If you need assistance go to our Community site at https://community.stereolabs.com/
