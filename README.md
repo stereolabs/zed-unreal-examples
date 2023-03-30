@@ -1,3 +1,12 @@
+# **Please update to [our Unreal Engine 5 plugin](https://github.com/stereolabs/zed-UE5) to use the last features of the ZED SDK**
+
+As of the release of the [ZED SDK 4.0](https://www.stereolabs.com/developers/release/), this sample is deprecated and will not be maintained anymore.
+To use the most recent features and capabilities of the ZED SDK, we invite you to use our [Unreal Engine 5 plugin](https://github.com/stereolabs/zed-UE5).
+
+Thanks for your comprehension.
+
+--------------------------------------
+
 # Stereolabs ZED - UE4 Examples
 
 This repository contains Unreal examples projects that demonstrate how to create advanced Mixed Reality application using the ZED SDK and Unreal.
